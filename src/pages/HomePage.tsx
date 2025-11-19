@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 
 const HomeContainer = styled.div`
@@ -64,6 +65,26 @@ const ComingSoon = styled.div`
   letter-spacing: 0.5px;
 `;
 
+const TestButton = styled(Link)`
+  display: inline-block;
+  margin-top: 2rem;
+  padding: 1rem 2.5rem;
+  background: rgba(255, 255, 255, 0.95);
+  color: #667eea;
+  text-decoration: none;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+    background: white;
+  }
+`;
+
 const HomePage: React.FC = () => {
   return (
     <HomeContainer>
@@ -102,7 +123,11 @@ const HomePage: React.FC = () => {
         </FeatureCard>
       </FeatureGrid>
       
-      <ComingSoon>🚀 Setup Complete - Ready for Development!</ComingSoon>
+      <ComingSoon>🚀 Backend Connected - Database Ready!</ComingSoon>
+      
+      <TestButton to="/test">
+        🎯 View Backend Data
+      </TestButton>
     </HomeContainer>
   );
 };
