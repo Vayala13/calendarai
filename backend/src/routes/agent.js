@@ -134,6 +134,17 @@ IMPORTANT:
       'Thursday': 4, 'Friday': 5, 'Saturday': 6
     };
 
+    // Helper to format date as YYYY-MM-DD HH:MM:SS (local time, no timezone conversion)
+    const formatLocalDateTime = (date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const seconds = '00';
+      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    };
+
     const eventsWithDates = scheduleJson.events.map(event => {
       const dayOffset = dayOffsets[event.day];
       const eventDate = new Date(weekStart);
@@ -150,9 +161,9 @@ IMPORTANT:
       
       return {
         ...event,
-        start_datetime: startDateTime.toISOString(),
-        end_datetime: endDateTime.toISOString(),
-        date: eventDate.toISOString().split('T')[0]
+        start_datetime: formatLocalDateTime(startDateTime),
+        end_datetime: formatLocalDateTime(endDateTime),
+        date: `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, '0')}-${String(eventDate.getDate()).padStart(2, '0')}`
       };
     });
 
@@ -227,15 +238,8 @@ router.post('/apply-schedule', authenticateToken, async (req, res) => {
       try {
         const priorityId = priorityMap.get(event.priority_name) || null;
         
-        // Convert ISO datetime to MySQL format
-        const startTime = new Date(event.start_datetime);
-        const endTime = new Date(event.end_datetime);
-        
-        const formatMySQL = (date) => {
-          return date.toISOString().slice(0, 19).replace('T', ' ');
-        };
-        
-        console.log(`Creating event: ${event.title} from ${formatMySQL(startTime)} to ${formatMySQL(endTime)}`);
+        // start_datetime and end_datetime are already in 'YYYY-MM-DD HH:MM:SS' format
+        console.log(`Creating event: ${event.title} from ${event.start_datetime} to ${event.end_datetime}`);
         
         await db.query(
           `INSERT INTO events (user_id, priority_id, title, description, start_time, end_time)
@@ -245,8 +249,8 @@ router.post('/apply-schedule', authenticateToken, async (req, res) => {
             priorityId,
             event.title,
             event.description || `Created by AI Agent`,
-            formatMySQL(startTime),
-            formatMySQL(endTime)
+            event.start_datetime,
+            event.end_datetime
           ]
         );
         results.eventsCreated++;
@@ -334,6 +338,16 @@ RESPOND WITH VALID JSON ONLY (no markdown, no explanation):
       'Thursday': 4, 'Friday': 5, 'Saturday': 6
     };
 
+    // Helper to format date as YYYY-MM-DD HH:MM:SS (local time)
+    const formatLocalDateTime = (date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${year}-${month}-${day} ${hours}:${minutes}:00`;
+    };
+
     const eventsWithDates = scheduleJson.events.map(event => {
       const dayOffset = dayOffsets[event.day];
       const eventDate = new Date(weekStart);
@@ -350,9 +364,9 @@ RESPOND WITH VALID JSON ONLY (no markdown, no explanation):
       
       return {
         ...event,
-        start_datetime: startDateTime.toISOString(),
-        end_datetime: endDateTime.toISOString(),
-        date: eventDate.toISOString().split('T')[0]
+        start_datetime: formatLocalDateTime(startDateTime),
+        end_datetime: formatLocalDateTime(endDateTime),
+        date: `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, '0')}-${String(eventDate.getDate()).padStart(2, '0')}`
       };
     });
 
