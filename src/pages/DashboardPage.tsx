@@ -354,6 +354,11 @@ const DashboardPage: React.FC = () => {
               <div>🤖</div>
               <h3>AI Agent Mode</h3>
             </ActionCard>
+            
+            <ActionCard to="/ask-agent" isDark={isDark}>
+              <div>✨</div>
+              <h3>Ask Agent</h3>
+            </ActionCard>
           </ActionGrid>
         </QuickActions>
 
