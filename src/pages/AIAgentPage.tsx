@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import styled, { keyframes } from 'styled-components';
 import { useTheme } from '../context/ThemeContext';
-import { FaSun, FaMoon, FaRobot, FaCalendarPlus, FaChartLine, FaLightbulb, FaCheck, FaTimes } from 'react-icons/fa';
+import { FaRobot, FaCalendarPlus, FaChartLine, FaLightbulb, FaCheck, FaTimes } from 'react-icons/fa';
 
 // ============ ANIMATIONS ============
 
@@ -623,7 +623,7 @@ const AIAgentPage: React.FC = () => {
           </TitleArea>
           <HeaderButtons>
             <ThemeToggle onClick={toggleTheme}>
-              {isDark ? <FaSun /> : <FaMoon />}
+              {isDark ? '☀️' : '🌙'}
             </ThemeToggle>
             <HeaderButton to="/calendar">📅 Calendar</HeaderButton>
             <HeaderButton to="/dashboard">🏠 Dashboard</HeaderButton>
