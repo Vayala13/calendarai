@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import styled, { keyframes } from 'styled-components';
 import { useTheme } from '../context/ThemeContext';
-import { FaRobot, FaCalendarPlus, FaChartLine, FaLightbulb, FaCheck, FaTimes } from 'react-icons/fa';
+// Using emoji instead of react-icons for React 18 compatibility
 
 // ============ ANIMATIONS ============
 
@@ -656,7 +656,7 @@ const AIAgentPage: React.FC = () => {
         {analysis && analysis.insights.length > 0 && (
           <AnalysisSection isDark={isDark}>
             <CardTitle isDark={isDark}>
-              <FaLightbulb /> AI Insights
+              💡 AI Insights
             </CardTitle>
             <InsightsList>
               {analysis.insights.map((insight, index) => (
@@ -672,7 +672,7 @@ const AIAgentPage: React.FC = () => {
           {/* Priority Progress */}
           <Card isDark={isDark}>
             <CardTitle isDark={isDark}>
-              <FaChartLine /> Priority Progress
+              📊 Priority Progress
             </CardTitle>
             {analysis?.priorities_analysis.filter(p => p.target_hours > 0).map((priority, index) => (
               <PriorityProgress key={index} isDark={isDark}>
@@ -708,7 +708,7 @@ const AIAgentPage: React.FC = () => {
           {/* AI Suggestions */}
           <Card isDark={isDark}>
             <CardTitle isDark={isDark}>
-              <FaCalendarPlus /> AI Scheduling Suggestions
+              🗓️ AI Scheduling Suggestions
             </CardTitle>
             {suggestions.length > 0 ? (
               <>
@@ -739,7 +739,7 @@ const AIAgentPage: React.FC = () => {
                 </SuggestionsList>
                 <ButtonRow>
                   <ActionButton variant="secondary" isDark={isDark} onClick={selectAll}>
-                    {selectedSuggestions.size === suggestions.length ? <FaTimes /> : <FaCheck />}
+                    {selectedSuggestions.size === suggestions.length ? '✖️' : '✔️'}
                     {selectedSuggestions.size === suggestions.length ? 'Deselect All' : 'Select All'}
                   </ActionButton>
                   <ActionButton 
@@ -747,8 +747,7 @@ const AIAgentPage: React.FC = () => {
                     onClick={handleAutoSchedule}
                     disabled={selectedSuggestions.size === 0 || scheduling}
                   >
-                    <FaCalendarPlus />
-                    {scheduling ? 'Scheduling...' : `Schedule ${selectedSuggestions.size} Events`}
+                    📅 {scheduling ? 'Scheduling...' : `Schedule ${selectedSuggestions.size} Events`}
                   </ActionButton>
                 </ButtonRow>
               </>
@@ -764,7 +763,7 @@ const AIAgentPage: React.FC = () => {
         {/* Quick Actions */}
         <Card isDark={isDark} style={{ marginTop: '25px' }}>
           <CardTitle isDark={isDark}>
-            <FaRobot /> Quick Actions
+            🤖 Quick Actions
           </CardTitle>
           <QuickActions>
             <QuickActionCard isDark={isDark} color="#8b5cf6" onClick={fetchAnalysis}>
