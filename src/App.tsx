@@ -10,6 +10,7 @@ import CalendarPage from './pages/CalendarPage';
 import PrioritiesPage from './pages/PrioritiesPage';
 import WhatIfPage from './pages/WhatIfPage';
 import ScenarioEditorPage from './pages/ScenarioEditorPage';
+import AIAgentPage from './pages/AIAgentPage';
 import './app.css';
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
           <Route path="/priorities" element={<PrioritiesPage />} />
           <Route path="/whatif" element={<WhatIfPage />} />
           <Route path="/whatif/:id" element={<ScenarioEditorPage />} />
+          <Route path="/ai-agent" element={<AIAgentPage />} />
           <Route path="/test" element={<TestAPIPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />

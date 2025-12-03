@@ -349,9 +349,9 @@ const DashboardPage: React.FC = () => {
               <h3>What-If Mode</h3>
             </ActionCard>
             
-            <ActionCard to="/agent" isDark={isDark} style={{ opacity: 0.5, pointerEvents: 'none' }}>
+            <ActionCard to="/ai-agent" isDark={isDark}>
               <div>🤖</div>
-              <h3>Agent Mode (Coming Soon)</h3>
+              <h3>AI Agent Mode</h3>
             </ActionCard>
           </ActionGrid>
         </QuickActions>
