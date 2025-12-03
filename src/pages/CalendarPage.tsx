@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, addMonths, subMonths, parseISO } from 'date-fns';
 import { useTheme, themes } from '../context/ThemeContext';
+import GoogleCalendarSync from '../components/GoogleCalendarSync';
 
 // ============ STYLED COMPONENTS ============
 
@@ -427,6 +428,7 @@ const CalendarPage: React.FC = () => {
   const [priorities, setPriorities] = useState<Priority[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showGoogleSync, setShowGoogleSync] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [formData, setFormData] = useState<EventFormData>({
@@ -663,6 +665,9 @@ const CalendarPage: React.FC = () => {
             <ThemeToggle isDark={isDark} onClick={toggleTheme} title={`Switch to ${isDark ? 'light' : 'dark'} mode`}>
               {isDark ? '☀️' : '🌙'}
             </ThemeToggle>
+            <AddEventButton isDark={isDark} onClick={() => setShowGoogleSync(true)}>
+              📅 Google
+            </AddEventButton>
             <AddEventButton isDark={isDark} onClick={() => handleDayClick(new Date())}>
               ➕ Add Event
             </AddEventButton>
@@ -798,6 +803,10 @@ const CalendarPage: React.FC = () => {
             </form>
           </Modal>
         </ModalOverlay>
+      )}
+
+      {showGoogleSync && (
+        <GoogleCalendarSync isDark={isDark} onClose={() => setShowGoogleSync(false)} />
       )}
     </PageContainer>
   );

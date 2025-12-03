@@ -15,6 +15,7 @@ const priorityRoutes = require('./routes/priorities');
 const messageRoutes = require('./routes/messages');
 const authRoutes = require('./routes/auth');
 const scenarioRoutes = require('./routes/scenarios');
+const googleRoutes = require('./routes/google');
 
 // Use routes
 app.use('/api/events', eventRoutes);
@@ -22,6 +23,7 @@ app.use('/api/priorities', priorityRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/scenarios', scenarioRoutes);
+app.use('/api/google', googleRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

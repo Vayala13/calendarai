@@ -482,6 +482,8 @@ const ScenarioEditorPage: React.FC = () => {
   
   const [showEventModal, setShowEventModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [googleConnected, setGoogleConnected] = useState(false);
+  const [syncingToGoogle, setSyncingToGoogle] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [eventForm, setEventForm] = useState({
@@ -513,11 +515,18 @@ const ScenarioEditorPage: React.FC = () => {
     try {
       const headers = getAuthHeaders();
       
-      const [scenarioRes, eventsRes, prioritiesRes] = await Promise.all([
+      const [scenarioRes, eventsRes, prioritiesRes, googleRes] = await Promise.all([
         fetch(`http://localhost:3001/api/scenarios/${scenarioId}`, { headers }),
         fetch('http://localhost:3001/api/events', { headers }),
-        fetch('http://localhost:3001/api/priorities', { headers })
+        fetch('http://localhost:3001/api/priorities', { headers }),
+        fetch('http://localhost:3001/api/google/status', { headers })
       ]);
+      
+      // Check Google connection
+      if (googleRes.ok) {
+        const googleData = await googleRes.json();
+        setGoogleConnected(googleData.connected);
+      }
 
       if (scenarioRes.status === 401) {
         localStorage.clear();
@@ -797,6 +806,29 @@ const ScenarioEditorPage: React.FC = () => {
     });
   };
 
+  // Sync directly to Google Calendar
+  const handleSyncToGoogle = async () => {
+    setSyncingToGoogle(true);
+    try {
+      const response = await fetch(`http://localhost:3001/api/google/sync-scenario/${scenarioId}`, {
+        method: 'POST',
+        headers: getAuthHeaders()
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        alert(`✅ ${data.message}`);
+        setShowExportModal(false);
+      } else {
+        throw new Error('Sync failed');
+      }
+    } catch (error) {
+      alert('Failed to sync to Google Calendar. Please try again.');
+    } finally {
+      setSyncingToGoogle(false);
+    }
+  };
+
   const days = generateCalendarDays();
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -963,6 +995,25 @@ const ScenarioEditorPage: React.FC = () => {
             </p>
 
             <ExportOptions>
+              {googleConnected && (
+                <ExportOption 
+                  isDark={isDark} 
+                  onClick={handleSyncToGoogle}
+                  style={{ 
+                    border: '2px solid #22c55e',
+                    background: isDark ? '#064e3b' : '#dcfce7'
+                  }}
+                >
+                  <div className="icon">🔗</div>
+                  <div className="info">
+                    <h4 style={{ color: isDark ? '#4ade80' : '#166534' }}>
+                      {syncingToGoogle ? 'Syncing...' : 'Sync to Google Calendar'}
+                    </h4>
+                    <p>Push this scenario directly to your connected Google Calendar</p>
+                  </div>
+                </ExportOption>
+              )}
+              
               <ExportOption isDark={isDark} onClick={handleExportICS}>
                 <div className="icon">📄</div>
                 <div className="info">
@@ -971,13 +1022,18 @@ const ScenarioEditorPage: React.FC = () => {
                 </div>
               </ExportOption>
               
-              <ExportOption isDark={isDark} style={{ opacity: 0.5, cursor: 'not-allowed' }}>
-                <div className="icon">🔗</div>
-                <div className="info">
-                  <h4>Connect Google Account (Coming Soon)</h4>
-                  <p>Sync directly with your Google Calendar</p>
-                </div>
-              </ExportOption>
+              {!googleConnected && (
+                <ExportOption 
+                  isDark={isDark} 
+                  onClick={() => navigate('/calendar?connect=google')}
+                >
+                  <div className="icon">🔗</div>
+                  <div className="info">
+                    <h4>Connect Google Account</h4>
+                    <p>Go to Calendar page to connect your Google account</p>
+                  </div>
+                </ExportOption>
+              )}
             </ExportOptions>
 
             <ButtonRow>
