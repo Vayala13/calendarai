@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
+const { authenticateToken } = require('../middleware/auth');
 
 // GET all events for a user
-router.get('/', async (req, res) => {
+router.get('/', authenticateToken, async (req, res) => {
   try {
-    const userId = req.query.user_id || 1; // Default to user 1 for now
+    const userId = req.user.user_id; // Get from authenticated token
     const [events] = await db.query(
       `SELECT e.*, p.name as priority_name, p.color as priority_color 
        FROM events e 
@@ -21,11 +22,11 @@ router.get('/', async (req, res) => {
 });
 
 // GET single event
-router.get('/:id', async (req, res) => {
+router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const [events] = await db.query(
-      'SELECT * FROM events WHERE event_id = ?',
-      [req.params.id]
+      'SELECT * FROM events WHERE event_id = ? AND user_id = ?',
+      [req.params.id, req.user.user_id]
     );
     if (events.length === 0) {
       return res.status(404).json({ error: 'Event not found' });
@@ -37,13 +38,14 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST create new event
-router.post('/', async (req, res) => {
+router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { user_id, priority_id, title, description, start_time, end_time, color_override, is_whatif } = req.body;
+    const { priority_id, title, description, start_time, end_time, color_override, is_whatif } = req.body;
+    const userId = req.user.user_id; // Get from authenticated token
     const [result] = await db.query(
       `INSERT INTO events (user_id, priority_id, title, description, start_time, end_time, color_override, is_whatif) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [user_id || 1, priority_id, title, description, start_time, end_time, color_override, is_whatif || false]
+      [userId, priority_id, title, description, start_time, end_time, color_override, is_whatif || false]
     );
     res.status(201).json({ 
       event_id: result.insertId,
@@ -55,14 +57,14 @@ router.post('/', async (req, res) => {
 });
 
 // PUT update event
-router.put('/:id', async (req, res) => {
+router.put('/:id', authenticateToken, async (req, res) => {
   try {
     const { title, description, start_time, end_time, priority_id, color_override } = req.body;
     await db.query(
       `UPDATE events 
        SET title = ?, description = ?, start_time = ?, end_time = ?, priority_id = ?, color_override = ?
-       WHERE event_id = ?`,
-      [title, description, start_time, end_time, priority_id, color_override, req.params.id]
+       WHERE event_id = ? AND user_id = ?`,
+      [title, description, start_time, end_time, priority_id, color_override, req.params.id, req.user.user_id]
     );
     res.json({ message: 'Event updated successfully' });
   } catch (error) {
@@ -71,9 +73,9 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE event
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authenticateToken, async (req, res) => {
   try {
-    await db.query('DELETE FROM events WHERE event_id = ?', [req.params.id]);
+    await db.query('DELETE FROM events WHERE event_id = ? AND user_id = ?', [req.params.id, req.user.user_id]);
     res.json({ message: 'Event deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });

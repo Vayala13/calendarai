@@ -13,11 +13,15 @@ app.use(express.json());
 const eventRoutes = require('./routes/events');
 const priorityRoutes = require('./routes/priorities');
 const messageRoutes = require('./routes/messages');
+const authRoutes = require('./routes/auth');
+const scenarioRoutes = require('./routes/scenarios');
 
 // Use routes
 app.use('/api/events', eventRoutes);
 app.use('/api/priorities', priorityRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/scenarios', scenarioRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
