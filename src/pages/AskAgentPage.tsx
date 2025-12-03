@@ -557,6 +557,12 @@ const AskAgentPage: React.FC = () => {
     setError(null);
 
     try {
+      console.log('Applying schedule:', {
+        priorities: schedule.priorities,
+        events: schedule.events,
+        clearExisting
+      });
+      
       const response = await fetch('http://localhost:3001/api/agent/apply-schedule', {
         method: 'POST',
         headers: getAuthHeaders(),
@@ -568,13 +574,20 @@ const AskAgentPage: React.FC = () => {
       });
 
       const data = await response.json();
+      console.log('Apply response:', data);
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to apply schedule');
       }
 
+      if (data.errors && data.errors.length > 0) {
+        console.warn('Some errors occurred:', data.errors);
+      }
+
+      alert(`✅ Created ${data.prioritiesCreated} priorities and ${data.eventsCreated} events!`);
       setApplied(true);
     } catch (err: any) {
+      console.error('Apply error:', err);
       setError(err.message);
     } finally {
       setIsApplying(false);

@@ -227,6 +227,16 @@ router.post('/apply-schedule', authenticateToken, async (req, res) => {
       try {
         const priorityId = priorityMap.get(event.priority_name) || null;
         
+        // Convert ISO datetime to MySQL format
+        const startTime = new Date(event.start_datetime);
+        const endTime = new Date(event.end_datetime);
+        
+        const formatMySQL = (date) => {
+          return date.toISOString().slice(0, 19).replace('T', ' ');
+        };
+        
+        console.log(`Creating event: ${event.title} from ${formatMySQL(startTime)} to ${formatMySQL(endTime)}`);
+        
         await db.query(
           `INSERT INTO events (user_id, priority_id, title, description, start_time, end_time)
            VALUES (?, ?, ?, ?, ?, ?)`,
@@ -235,12 +245,13 @@ router.post('/apply-schedule', authenticateToken, async (req, res) => {
             priorityId,
             event.title,
             event.description || `Created by AI Agent`,
-            event.start_datetime,
-            event.end_datetime
+            formatMySQL(startTime),
+            formatMySQL(endTime)
           ]
         );
         results.eventsCreated++;
       } catch (err) {
+        console.error(`Error creating event ${event.title}:`, err.message);
         results.errors.push({ type: 'event', title: event.title, error: err.message });
       }
     }
