@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { useTheme, themes } from '../context/ThemeContext';
+import ChatSidebar from '../components/ChatSidebar';
 
 // ============ STYLED COMPONENTS ============
 
@@ -798,6 +799,8 @@ const PrioritiesPage: React.FC = () => {
           </Modal>
         </ModalOverlay>
       )}
+      
+      <ChatSidebar isDark={isDark} />
     </PageContainer>
   );
 };

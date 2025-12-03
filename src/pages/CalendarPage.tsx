@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, addMonths, subMonths, parseISO } from 'date-fns';
 import { useTheme, themes } from '../context/ThemeContext';
 import GoogleCalendarSync from '../components/GoogleCalendarSync';
+import ChatSidebar from '../components/ChatSidebar';
 
 // ============ STYLED COMPONENTS ============
 
@@ -808,6 +809,8 @@ const CalendarPage: React.FC = () => {
       {showGoogleSync && (
         <GoogleCalendarSync isDark={isDark} onClose={() => setShowGoogleSync(false)} />
       )}
+      
+      <ChatSidebar isDark={isDark} />
     </PageContainer>
   );
 };

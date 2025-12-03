@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { useTheme, themes } from '../context/ThemeContext';
+import ChatSidebar from '../components/ChatSidebar';
 
 const PageContainer = styled.div<{ isDark: boolean }>`
   min-height: 100vh;
@@ -377,6 +378,8 @@ const DashboardPage: React.FC = () => {
           </FeatureList>
         </InfoSection>
       </ContentContainer>
+      
+      <ChatSidebar isDark={isDark} />
     </PageContainer>
   );
 };

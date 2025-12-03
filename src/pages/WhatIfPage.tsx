@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { format, parseISO } from 'date-fns';
 import { useTheme, themes } from '../context/ThemeContext';
+import ChatSidebar from '../components/ChatSidebar';
 
 // ============ STYLED COMPONENTS ============
 
@@ -751,6 +752,8 @@ const WhatIfPage: React.FC = () => {
           </Modal>
         </ModalOverlay>
       )}
+      
+      <ChatSidebar isDark={isDark} />
     </PageContainer>
   );
 };
