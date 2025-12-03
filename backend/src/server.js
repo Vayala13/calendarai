@@ -17,6 +17,7 @@ const authRoutes = require('./routes/auth');
 const scenarioRoutes = require('./routes/scenarios');
 const googleRoutes = require('./routes/google');
 const aiRoutes = require('./routes/ai');
+const chatRoutes = require('./routes/chat');
 
 // Use routes
 app.use('/api/events', eventRoutes);
@@ -26,6 +27,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/scenarios', scenarioRoutes);
 app.use('/api/google', googleRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import styled, { keyframes } from 'styled-components';
 import { useTheme } from '../context/ThemeContext';
+import ChatSidebar from '../components/ChatSidebar';
 // Using emoji instead of react-icons for React 18 compatibility
 
 // ============ ANIMATIONS ============
@@ -789,6 +790,9 @@ const AIAgentPage: React.FC = () => {
           </QuickActions>
         </Card>
       </ContentContainer>
+      
+      {/* Claude AI Chat Sidebar */}
+      <ChatSidebar isDark={isDark} />
     </PageContainer>
   );
 };
