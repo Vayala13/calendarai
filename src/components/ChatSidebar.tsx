@@ -4,36 +4,83 @@ import styled, { keyframes } from 'styled-components';
 // ============ ANIMATIONS ============
 
 const fadeIn = keyframes`
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 `;
 
-const pulse = keyframes`
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
+const slideIn = keyframes`
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
 `;
 
-const typing = keyframes`
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 1; }
+const pulse = keyframes`
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
 `;
+
+const thinking = keyframes`
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+`;
+
+// ============ ANTHROPIC-INSPIRED THEME ============
+
+const theme = {
+  light: {
+    bg: '#FAFAF9',
+    bgSecondary: '#FFFFFF',
+    bgTertiary: '#F5F5F4',
+    text: '#1C1917',
+    textSecondary: '#57534E',
+    textMuted: '#A8A29E',
+    accent: '#D97757',
+    accentLight: '#FDEBE6',
+    accentDark: '#C4593D',
+    border: '#E7E5E4',
+    borderLight: '#F5F5F4',
+    userBubble: '#1C1917',
+    userText: '#FFFFFF',
+    aiBubble: '#FFFFFF',
+    aiText: '#1C1917',
+    shadow: '0 4px 24px rgba(0, 0, 0, 0.08)',
+    shadowLg: '0 12px 48px rgba(0, 0, 0, 0.12)',
+  },
+  dark: {
+    bg: '#18181B',
+    bgSecondary: '#27272A',
+    bgTertiary: '#3F3F46',
+    text: '#FAFAFA',
+    textSecondary: '#A1A1AA',
+    textMuted: '#71717A',
+    accent: '#D97757',
+    accentLight: '#3D2A24',
+    accentDark: '#E8927A',
+    border: '#3F3F46',
+    borderLight: '#27272A',
+    userBubble: '#D97757',
+    userText: '#FFFFFF',
+    aiBubble: '#27272A',
+    aiText: '#FAFAFA',
+    shadow: '0 4px 24px rgba(0, 0, 0, 0.3)',
+    shadowLg: '0 12px 48px rgba(0, 0, 0, 0.4)',
+  }
+};
 
 // ============ STYLED COMPONENTS ============
 
 const SidebarContainer = styled.div<{ isOpen: boolean; isDark: boolean }>`
   position: fixed;
-  right: ${props => props.isOpen ? '0' : '-420px'};
+  right: ${props => props.isOpen ? '0' : '-440px'};
   top: 0;
   height: 100vh;
-  width: 400px;
-  background: ${props => props.isDark 
-    ? 'linear-gradient(180deg, #1e1b4b 0%, #312e81 100%)' 
-    : 'linear-gradient(180deg, #f5f3ff 0%, #ede9fe 100%)'};
-  box-shadow: ${props => props.isOpen ? '-5px 0 30px rgba(0,0,0,0.3)' : 'none'};
-  transition: right 0.3s ease;
+  width: 420px;
+  background: ${props => props.isDark ? theme.dark.bg : theme.light.bg};
+  box-shadow: ${props => props.isOpen ? (props.isDark ? theme.dark.shadowLg : theme.light.shadowLg) : 'none'};
+  transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 1000;
   display: flex;
   flex-direction: column;
+  border-left: 1px solid ${props => props.isDark ? theme.dark.border : theme.light.border};
   
   @media (max-width: 500px) {
     width: 100%;
@@ -42,200 +89,56 @@ const SidebarContainer = styled.div<{ isOpen: boolean; isDark: boolean }>`
 `;
 
 const Header = styled.div<{ isDark: boolean }>`
-  background: ${props => props.isDark 
-    ? 'linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%)' 
-    : 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)'};
-  padding: 20px;
+  padding: 20px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-bottom: 1px solid ${props => props.isDark ? theme.dark.border : theme.light.border};
+  background: ${props => props.isDark ? theme.dark.bgSecondary : theme.light.bgSecondary};
 `;
 
-const HeaderTitle = styled.div`
+const HeaderTitle = styled.div<{ isDark: boolean }>`
   display: flex;
   align-items: center;
-  gap: 10px;
-  color: white;
+  gap: 12px;
   
-  h3 {
-    margin: 0;
-    font-size: 1.1rem;
+  .logo {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, #D97757 0%, #E8927A 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    box-shadow: 0 2px 8px rgba(217, 119, 87, 0.3);
   }
   
-  .badge {
-    background: rgba(255,255,255,0.2);
-    padding: 3px 8px;
-    border-radius: 10px;
-    font-size: 0.7rem;
-    font-weight: 600;
+  .info {
+    h3 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+      color: ${props => props.isDark ? theme.dark.text : theme.light.text};
+      letter-spacing: -0.02em;
+    }
+    
+    .model {
+      font-size: 0.75rem;
+      color: ${props => props.isDark ? theme.dark.textMuted : theme.light.textMuted};
+      margin-top: 2px;
+      font-weight: 500;
+    }
   }
 `;
 
-const CloseButton = styled.button`
-  background: rgba(255,255,255,0.2);
+const CloseButton = styled.button<{ isDark: boolean }>`
+  background: transparent;
   border: none;
-  color: white;
+  color: ${props => props.isDark ? theme.dark.textSecondary : theme.light.textSecondary};
   width: 36px;
   height: 36px;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 1.2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-  
-  &:hover {
-    background: rgba(255,255,255,0.3);
-  }
-`;
-
-const MessagesContainer = styled.div<{ isDark: boolean }>`
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-`;
-
-const Message = styled.div<{ isUser: boolean; isDark: boolean }>`
-  max-width: 85%;
-  align-self: ${props => props.isUser ? 'flex-end' : 'flex-start'};
-  animation: ${fadeIn} 0.3s ease;
-`;
-
-const MessageBubble = styled.div<{ isUser: boolean; isDark: boolean }>`
-  background: ${props => props.isUser 
-    ? 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)'
-    : (props.isDark ? 'rgba(255,255,255,0.1)' : 'white')};
-  color: ${props => props.isUser ? 'white' : (props.isDark ? '#e5e7eb' : '#1f2937')};
-  padding: 12px 16px;
-  border-radius: ${props => props.isUser 
-    ? '18px 18px 4px 18px' 
-    : '18px 18px 18px 4px'};
-  font-size: 0.95rem;
-  line-height: 1.5;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  
-  p {
-    margin: 0 0 10px 0;
-    &:last-child { margin: 0; }
-  }
-  
-  ul, ol {
-    margin: 10px 0;
-    padding-left: 20px;
-  }
-  
-  code {
-    background: ${props => props.isUser ? 'rgba(255,255,255,0.2)' : (props.isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.05)')};
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 0.85rem;
-  }
-`;
-
-const MessageTime = styled.div<{ isUser: boolean; isDark: boolean }>`
-  font-size: 0.7rem;
-  color: ${props => props.isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)'};
-  margin-top: 4px;
-  text-align: ${props => props.isUser ? 'right' : 'left'};
-`;
-
-const ThinkingIndicator = styled.div<{ isDark: boolean }>`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 15px;
-  color: ${props => props.isDark ? '#a78bfa' : '#7c3aed'};
-  font-size: 0.9rem;
-  
-  .dots {
-    display: flex;
-    gap: 4px;
-    
-    span {
-      width: 8px;
-      height: 8px;
-      background: currentColor;
-      border-radius: 50%;
-      animation: ${typing} 1.4s ease infinite;
-      
-      &:nth-child(2) { animation-delay: 0.2s; }
-      &:nth-child(3) { animation-delay: 0.4s; }
-    }
-  }
-`;
-
-const ThinkingBlock = styled.details<{ isDark: boolean }>`
-  background: ${props => props.isDark ? 'rgba(139, 92, 246, 0.1)' : 'rgba(139, 92, 246, 0.05)'};
-  border: 1px solid ${props => props.isDark ? 'rgba(139, 92, 246, 0.3)' : 'rgba(139, 92, 246, 0.2)'};
   border-radius: 8px;
-  padding: 10px;
-  margin-top: 10px;
-  font-size: 0.8rem;
-  
-  summary {
-    cursor: pointer;
-    color: ${props => props.isDark ? '#a78bfa' : '#7c3aed'};
-    font-weight: 600;
-    
-    &:hover {
-      text-decoration: underline;
-    }
-  }
-  
-  .content {
-    margin-top: 10px;
-    color: ${props => props.isDark ? '#9ca3af' : '#6b7280'};
-    line-height: 1.5;
-    white-space: pre-wrap;
-    max-height: 200px;
-    overflow-y: auto;
-  }
-`;
-
-const InputContainer = styled.div<{ isDark: boolean }>`
-  padding: 15px 20px;
-  background: ${props => props.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.8)'};
-  border-top: 1px solid ${props => props.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'};
-`;
-
-const InputWrapper = styled.div<{ isDark: boolean }>`
-  display: flex;
-  gap: 10px;
-  background: ${props => props.isDark ? 'rgba(255,255,255,0.1)' : 'white'};
-  border-radius: 25px;
-  padding: 5px 5px 5px 15px;
-  border: 2px solid ${props => props.isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb'};
-  transition: border-color 0.2s;
-  
-  &:focus-within {
-    border-color: #8b5cf6;
-  }
-`;
-
-const Input = styled.input<{ isDark: boolean }>`
-  flex: 1;
-  border: none;
-  background: transparent;
-  font-size: 0.95rem;
-  color: ${props => props.isDark ? '#e5e7eb' : '#1f2937'};
-  outline: none;
-  
-  &::placeholder {
-    color: ${props => props.isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)'};
-  }
-`;
-
-const SendButton = styled.button<{ isDark: boolean }>`
-  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-  border: none;
-  color: white;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
   cursor: pointer;
   font-size: 1.1rem;
   display: flex;
@@ -243,94 +146,398 @@ const SendButton = styled.button<{ isDark: boolean }>`
   justify-content: center;
   transition: all 0.2s;
   
-  &:hover:not(:disabled) {
-    transform: scale(1.05);
-    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+  &:hover {
+    background: ${props => props.isDark ? theme.dark.bgTertiary : theme.light.bgTertiary};
+    color: ${props => props.isDark ? theme.dark.text : theme.light.text};
+  }
+`;
+
+const MessagesContainer = styled.div<{ isDark: boolean }>`
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: ${props => props.isDark ? theme.dark.border : theme.light.border};
+    border-radius: 3px;
+  }
+`;
+
+const Message = styled.div<{ isUser: boolean; isDark: boolean }>`
+  display: flex;
+  flex-direction: column;
+  align-items: ${props => props.isUser ? 'flex-end' : 'flex-start'};
+  animation: ${fadeIn} 0.3s ease;
+`;
+
+const MessageBubble = styled.div<{ isUser: boolean; isDark: boolean }>`
+  max-width: 88%;
+  background: ${props => props.isUser 
+    ? (props.isDark ? theme.dark.userBubble : theme.light.userBubble)
+    : (props.isDark ? theme.dark.aiBubble : theme.light.aiBubble)};
+  color: ${props => props.isUser 
+    ? (props.isDark ? theme.dark.userText : theme.light.userText)
+    : (props.isDark ? theme.dark.aiText : theme.light.aiText)};
+  padding: 14px 18px;
+  border-radius: ${props => props.isUser ? '20px 20px 6px 20px' : '20px 20px 20px 6px'};
+  font-size: 0.9rem;
+  line-height: 1.6;
+  box-shadow: ${props => props.isUser ? 'none' : (props.isDark ? theme.dark.shadow : theme.light.shadow)};
+  border: ${props => props.isUser ? 'none' : `1px solid ${props.isDark ? theme.dark.border : theme.light.border}`};
+  
+  p {
+    margin: 0 0 12px 0;
+    &:last-child { margin: 0; }
+  }
+  
+  ul, ol {
+    margin: 12px 0;
+    padding-left: 20px;
+  }
+  
+  li {
+    margin-bottom: 6px;
+  }
+  
+  strong {
+    font-weight: 600;
+  }
+  
+  code {
+    background: ${props => props.isUser 
+      ? 'rgba(255,255,255,0.15)' 
+      : (props.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)')};
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+`;
+
+const MessageMeta = styled.div<{ isUser: boolean; isDark: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 0 4px;
+  
+  .time {
+    font-size: 0.7rem;
+    color: ${props => props.isDark ? theme.dark.textMuted : theme.light.textMuted};
+    font-weight: 500;
+  }
+`;
+
+const ThinkingBadge = styled.button<{ isDark: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: ${props => props.isDark ? theme.dark.accentLight : theme.light.accentLight};
+  color: ${props => props.isDark ? theme.dark.accentDark : theme.light.accent};
+  border: none;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    transform: scale(1.02);
+  }
+`;
+
+const ThinkingModal = styled.div<{ isDark: boolean }>`
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 500px;
+  max-height: 70vh;
+  background: ${props => props.isDark ? theme.dark.bgSecondary : theme.light.bgSecondary};
+  border-radius: 16px;
+  box-shadow: ${props => props.isDark ? theme.dark.shadowLg : theme.light.shadowLg};
+  border: 1px solid ${props => props.isDark ? theme.dark.border : theme.light.border};
+  z-index: 1100;
+  overflow: hidden;
+  animation: ${fadeIn} 0.2s ease;
+`;
+
+const ThinkingModalHeader = styled.div<{ isDark: boolean }>`
+  padding: 16px 20px;
+  border-bottom: 1px solid ${props => props.isDark ? theme.dark.border : theme.light.border};
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+  h4 {
+    margin: 0;
+    font-size: 0.95rem;
+    color: ${props => props.isDark ? theme.dark.text : theme.light.text};
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+`;
+
+const ThinkingModalContent = styled.div<{ isDark: boolean }>`
+  padding: 20px;
+  max-height: 50vh;
+  overflow-y: auto;
+  font-size: 0.85rem;
+  line-height: 1.7;
+  color: ${props => props.isDark ? theme.dark.textSecondary : theme.light.textSecondary};
+  white-space: pre-wrap;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+`;
+
+const Overlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 1050;
+`;
+
+const ThinkingIndicator = styled.div<{ isDark: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  animation: ${slideIn} 0.3s ease;
+  
+  .avatar {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #D97757 0%, #E8927A 100%);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+  }
+  
+  .content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    
+    .label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: ${props => props.isDark ? theme.dark.accent : theme.light.accent};
+    }
+    
+    .dots {
+      display: flex;
+      gap: 4px;
+      
+      span {
+        width: 6px;
+        height: 6px;
+        background: ${props => props.isDark ? theme.dark.accent : theme.light.accent};
+        border-radius: 50%;
+        animation: ${thinking} 1.4s ease infinite;
+        
+        &:nth-child(2) { animation-delay: 0.2s; }
+        &:nth-child(3) { animation-delay: 0.4s; }
+      }
+    }
+  }
+`;
+
+const InputContainer = styled.div<{ isDark: boolean }>`
+  padding: 16px 20px 20px;
+  background: ${props => props.isDark ? theme.dark.bgSecondary : theme.light.bgSecondary};
+  border-top: 1px solid ${props => props.isDark ? theme.dark.border : theme.light.border};
+`;
+
+const InputWrapper = styled.div<{ isDark: boolean; isFocused: boolean }>`
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  background: ${props => props.isDark ? theme.dark.bg : theme.light.bg};
+  border-radius: 16px;
+  padding: 12px 12px 12px 18px;
+  border: 2px solid ${props => props.isFocused 
+    ? (props.isDark ? theme.dark.accent : theme.light.accent)
+    : (props.isDark ? theme.dark.border : theme.light.border)};
+  transition: all 0.2s;
+  box-shadow: ${props => props.isFocused 
+    ? `0 0 0 3px ${props.isDark ? 'rgba(217, 119, 87, 0.15)' : 'rgba(217, 119, 87, 0.1)'}`
+    : 'none'};
+`;
+
+const Input = styled.textarea<{ isDark: boolean }>`
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 0.9rem;
+  color: ${props => props.isDark ? theme.dark.text : theme.light.text};
+  outline: none;
+  resize: none;
+  min-height: 24px;
+  max-height: 120px;
+  line-height: 1.5;
+  font-family: inherit;
+  
+  &::placeholder {
+    color: ${props => props.isDark ? theme.dark.textMuted : theme.light.textMuted};
+  }
+`;
+
+const SendButton = styled.button<{ isDark: boolean; hasContent: boolean }>`
+  background: ${props => props.hasContent 
+    ? 'linear-gradient(135deg, #D97757 0%, #C4593D 100%)'
+    : (props.isDark ? theme.dark.bgTertiary : theme.light.bgTertiary)};
+  border: none;
+  color: ${props => props.hasContent ? 'white' : (props.isDark ? theme.dark.textMuted : theme.light.textMuted)};
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  cursor: ${props => props.hasContent ? 'pointer' : 'default'};
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  
+  &:hover {
+    ${props => props.hasContent && `
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(217, 119, 87, 0.3);
+    `}
   }
   
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    transform: none;
   }
 `;
 
 const WelcomeMessage = styled.div<{ isDark: boolean }>`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
-  padding: 40px 20px;
-  color: ${props => props.isDark ? '#a78bfa' : '#7c3aed'};
+  padding: 40px 24px;
+  animation: ${fadeIn} 0.4s ease;
   
-  .icon {
-    font-size: 3rem;
-    margin-bottom: 15px;
+  .logo {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, #D97757 0%, #E8927A 100%);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 24px rgba(217, 119, 87, 0.25);
   }
   
   h4 {
-    margin: 0 0 10px 0;
+    margin: 0 0 8px 0;
     font-size: 1.1rem;
+    font-weight: 600;
+    color: ${props => props.isDark ? theme.dark.text : theme.light.text};
+    letter-spacing: -0.02em;
   }
   
   p {
-    margin: 0;
-    font-size: 0.9rem;
-    opacity: 0.8;
+    margin: 0 0 24px 0;
+    font-size: 0.85rem;
+    color: ${props => props.isDark ? theme.dark.textSecondary : theme.light.textSecondary};
+    line-height: 1.6;
+    max-width: 280px;
   }
-  
-  .suggestions {
-    margin-top: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
+`;
+
+const SuggestionsGrid = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
 `;
 
 const SuggestionButton = styled.button<{ isDark: boolean }>`
-  background: ${props => props.isDark ? 'rgba(139, 92, 246, 0.2)' : 'rgba(139, 92, 246, 0.1)'};
-  border: 1px solid ${props => props.isDark ? 'rgba(139, 92, 246, 0.3)' : 'rgba(139, 92, 246, 0.2)'};
-  color: ${props => props.isDark ? '#c4b5fd' : '#7c3aed'};
-  padding: 10px 15px;
-  border-radius: 20px;
+  background: ${props => props.isDark ? theme.dark.bgSecondary : theme.light.bgSecondary};
+  border: 1px solid ${props => props.isDark ? theme.dark.border : theme.light.border};
+  color: ${props => props.isDark ? theme.dark.textSecondary : theme.light.textSecondary};
+  padding: 12px 16px;
+  border-radius: 12px;
   cursor: pointer;
   font-size: 0.85rem;
+  text-align: left;
   transition: all 0.2s;
+  line-height: 1.4;
   
   &:hover {
-    background: ${props => props.isDark ? 'rgba(139, 92, 246, 0.3)' : 'rgba(139, 92, 246, 0.2)'};
-    transform: translateY(-2px);
+    background: ${props => props.isDark ? theme.dark.accentLight : theme.light.accentLight};
+    border-color: ${props => props.isDark ? theme.dark.accent : theme.light.accent};
+    color: ${props => props.isDark ? theme.dark.accentDark : theme.light.accent};
+    transform: translateY(-1px);
   }
 `;
 
-const ToggleButton = styled.button<{ isDark: boolean }>`
+const ToggleButton = styled.button<{ isDark: boolean; isOpen: boolean }>`
   position: fixed;
-  right: 20px;
-  bottom: 20px;
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  right: 24px;
+  bottom: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #D97757 0%, #C4593D 100%);
   border: none;
   color: white;
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   cursor: pointer;
-  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
-  transition: all 0.3s;
+  box-shadow: 0 4px 20px rgba(217, 119, 87, 0.35);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 999;
   display: flex;
   align-items: center;
   justify-content: center;
   
-  &:hover {
-    transform: scale(1.1);
-    box-shadow: 0 6px 30px rgba(139, 92, 246, 0.6);
-  }
+  ${props => !props.isOpen && `
+    &:hover {
+      transform: scale(1.08);
+      box-shadow: 0 6px 28px rgba(217, 119, 87, 0.45);
+    }
+  `}
+  
+  ${props => props.isOpen && `
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.8);
+  `}
 `;
 
 const ErrorMessage = styled.div<{ isDark: boolean }>`
-  background: ${props => props.isDark ? 'rgba(239, 68, 68, 0.2)' : '#fee2e2'};
-  color: ${props => props.isDark ? '#fca5a5' : '#991b1b'};
-  padding: 12px 15px;
-  border-radius: 10px;
+  background: ${props => props.isDark ? 'rgba(239, 68, 68, 0.15)' : '#FEF2F2'};
+  color: ${props => props.isDark ? '#FCA5A5' : '#991B1B'};
+  padding: 12px 16px;
+  border-radius: 12px;
   font-size: 0.85rem;
-  margin: 10px 0;
+  border: 1px solid ${props => props.isDark ? 'rgba(239, 68, 68, 0.3)' : '#FECACA'};
+  animation: ${fadeIn} 0.3s ease;
 `;
 
 // ============ INTERFACES ============
@@ -355,7 +562,10 @@ const ChatSidebar: React.FC<Props> = ({ isDark }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sessionId] = useState(`chat_${Date.now()}`);
+  const [isFocused, setIsFocused] = useState(false);
+  const [showThinking, setShowThinking] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -364,6 +574,12 @@ const ChatSidebar: React.FC<Props> = ({ isDark }) => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    if (isOpen && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isOpen]);
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem('token');
@@ -380,7 +596,6 @@ const ChatSidebar: React.FC<Props> = ({ isDark }) => {
     setError(null);
     setInput('');
     
-    // Add user message
     const userMessage: ChatMessage = {
       role: 'user',
       content: text,
@@ -409,7 +624,6 @@ const ChatSidebar: React.FC<Props> = ({ isDark }) => {
         throw new Error(data.error || data.message || 'Failed to get response');
       }
 
-      // Add assistant message
       const assistantMessage: ChatMessage = {
         role: 'assistant',
         content: data.message,
@@ -432,6 +646,12 @@ const ChatSidebar: React.FC<Props> = ({ isDark }) => {
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value);
+    e.target.style.height = 'auto';
+    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+  };
+
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString('en-US', { 
       hour: 'numeric', 
@@ -441,37 +661,37 @@ const ChatSidebar: React.FC<Props> = ({ isDark }) => {
   };
 
   const suggestions = [
-    "How can I better balance my priorities this week?",
-    "When should I schedule time for my top priority?",
+    "How can I better balance my priorities?",
+    "What should I focus on today?",
     "Am I on track with my weekly goals?",
-    "Suggest a productive schedule for tomorrow"
+    "Help me plan tomorrow"
   ];
 
   return (
     <>
-      <ToggleButton isDark={isDark} onClick={() => setIsOpen(!isOpen)}>
-        {isOpen ? '✕' : '💬'}
+      <ToggleButton isDark={isDark} isOpen={isOpen} onClick={() => setIsOpen(true)}>
+        ✨
       </ToggleButton>
 
       <SidebarContainer isOpen={isOpen} isDark={isDark}>
         <Header isDark={isDark}>
-          <HeaderTitle>
-            <span>🤖</span>
-            <div>
-              <h3>AI Assistant</h3>
-              <span className="badge">Claude Sonnet 4</span>
+          <HeaderTitle isDark={isDark}>
+            <div className="logo">✨</div>
+            <div className="info">
+              <h3>Claude Assistant</h3>
+              <div className="model">Sonnet 4 · Extended Thinking</div>
             </div>
           </HeaderTitle>
-          <CloseButton onClick={() => setIsOpen(false)}>✕</CloseButton>
+          <CloseButton isDark={isDark} onClick={() => setIsOpen(false)}>✕</CloseButton>
         </Header>
 
         <MessagesContainer isDark={isDark}>
           {messages.length === 0 ? (
             <WelcomeMessage isDark={isDark}>
-              <div className="icon">🤖✨</div>
-              <h4>Hi! I'm your AI scheduling assistant</h4>
-              <p>I can help you manage your time, analyze your priorities, and suggest the best times to schedule activities.</p>
-              <div className="suggestions">
+              <div className="logo">✨</div>
+              <h4>Hi, I'm Claude</h4>
+              <p>I'm your AI scheduling assistant. I can help you manage your time and stay aligned with your priorities.</p>
+              <SuggestionsGrid>
                 {suggestions.map((s, i) => (
                   <SuggestionButton 
                     key={i} 
@@ -481,42 +701,43 @@ const ChatSidebar: React.FC<Props> = ({ isDark }) => {
                     {s}
                   </SuggestionButton>
                 ))}
-              </div>
+              </SuggestionsGrid>
             </WelcomeMessage>
           ) : (
             messages.map((msg, index) => (
               <Message key={index} isUser={msg.role === 'user'} isDark={isDark}>
                 <MessageBubble isUser={msg.role === 'user'} isDark={isDark}>
                   {msg.content}
-                  {msg.thinking && (
-                    <ThinkingBlock isDark={isDark}>
-                      <summary>🧠 View Claude's thinking</summary>
-                      <div className="content">{msg.thinking}</div>
-                    </ThinkingBlock>
-                  )}
                 </MessageBubble>
-                <MessageTime isUser={msg.role === 'user'} isDark={isDark}>
-                  {formatTime(msg.timestamp)}
-                </MessageTime>
+                <MessageMeta isUser={msg.role === 'user'} isDark={isDark}>
+                  <span className="time">{formatTime(msg.timestamp)}</span>
+                  {msg.thinking && (
+                    <ThinkingBadge isDark={isDark} onClick={() => setShowThinking(msg.thinking!)}>
+                      🧠 View thinking
+                    </ThinkingBadge>
+                  )}
+                </MessageMeta>
               </Message>
             ))
           )}
           
           {isLoading && (
             <ThinkingIndicator isDark={isDark}>
-              <span>🧠</span>
-              Claude is thinking
-              <div className="dots">
-                <span></span>
-                <span></span>
-                <span></span>
+              <div className="avatar">✨</div>
+              <div className="content">
+                <span className="label">Thinking...</span>
+                <div className="dots">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
               </div>
             </ThinkingIndicator>
           )}
           
           {error && (
             <ErrorMessage isDark={isDark}>
-              ⚠️ {error}
+              {error}
             </ErrorMessage>
           )}
           
@@ -524,29 +745,48 @@ const ChatSidebar: React.FC<Props> = ({ isDark }) => {
         </MessagesContainer>
 
         <InputContainer isDark={isDark}>
-          <InputWrapper isDark={isDark}>
+          <InputWrapper isDark={isDark} isFocused={isFocused}>
             <Input
+              ref={inputRef}
               isDark={isDark}
-              type="text"
-              placeholder="Ask me anything about your schedule..."
+              placeholder="Ask Claude anything..."
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={handleInputChange}
               onKeyPress={handleKeyPress}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
               disabled={isLoading}
+              rows={1}
             />
             <SendButton 
               isDark={isDark} 
+              hasContent={!!input.trim()}
               onClick={() => sendMessage()}
               disabled={!input.trim() || isLoading}
             >
-              ➤
+              ↑
             </SendButton>
           </InputWrapper>
         </InputContainer>
       </SidebarContainer>
+
+      {/* Thinking Modal */}
+      {showThinking && (
+        <>
+          <Overlay onClick={() => setShowThinking(null)} />
+          <ThinkingModal isDark={isDark}>
+            <ThinkingModalHeader isDark={isDark}>
+              <h4>🧠 Claude's Reasoning</h4>
+              <CloseButton isDark={isDark} onClick={() => setShowThinking(null)}>✕</CloseButton>
+            </ThinkingModalHeader>
+            <ThinkingModalContent isDark={isDark}>
+              {showThinking}
+            </ThinkingModalContent>
+          </ThinkingModal>
+        </>
+      )}
     </>
   );
 };
 
 export default ChatSidebar;
-
