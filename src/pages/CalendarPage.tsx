@@ -424,11 +424,29 @@ const WeekViewContainer = styled.div<{ isDark: boolean }>`
   overflow: hidden;
   box-shadow: ${props => props.isDark ? themes.dark.shadow : '0 4px 20px rgba(0,0,0,0.1)'};
   border: ${props => props.isDark ? '1px solid ' + themes.dark.borderColor : 'none'};
+  max-height: calc(100vh - 200px);
+  display: flex;
+  flex-direction: column;
 `;
 
-const WeekGrid = styled.div`
+const WeekGrid = styled.div<{ isDark: boolean }>`
   display: grid;
   grid-template-columns: 60px repeat(7, 1fr);
+  overflow-y: auto;
+  flex: 1;
+  
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: ${props => props.isDark ? themes.dark.bgSecondary : '#f0f0f0'};
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: ${props => props.isDark ? themes.dark.borderColor : '#ccc'};
+    border-radius: 4px;
+  }
 `;
 
 const TimeColumn = styled.div<{ isDark: boolean }>`
@@ -436,12 +454,14 @@ const TimeColumn = styled.div<{ isDark: boolean }>`
 `;
 
 const TimeSlot = styled.div<{ isDark: boolean }>`
-  height: 60px;
+  height: 50px;
+  min-height: 50px;
   padding: 4px 8px;
   font-size: 0.75rem;
   color: ${props => props.isDark ? themes.dark.textMuted : '#999'};
   text-align: right;
   border-bottom: 1px solid ${props => props.isDark ? themes.dark.borderColor : '#f0f0f0'};
+  flex-shrink: 0;
 `;
 
 const WeekDayColumn = styled.div<{ isDark: boolean; isToday: boolean }>`
@@ -489,9 +509,11 @@ const WeekDayHeader = styled.div<{ isDark: boolean; isToday: boolean }>`
 `;
 
 const WeekHourRow = styled.div<{ isDark: boolean }>`
-  height: 60px;
+  height: 50px;
+  min-height: 50px;
   border-bottom: 1px solid ${props => props.isDark ? themes.dark.borderColor : '#f0f0f0'};
   position: relative;
+  flex-shrink: 0;
 `;
 
 const WeekEventBlock = styled.div<{ color: string; top: number; height: number; isDark: boolean }>`
@@ -537,6 +559,9 @@ const DayViewContainer = styled.div<{ isDark: boolean }>`
   overflow: hidden;
   box-shadow: ${props => props.isDark ? themes.dark.shadow : '0 4px 20px rgba(0,0,0,0.1)'};
   border: ${props => props.isDark ? '1px solid ' + themes.dark.borderColor : 'none'};
+  max-height: calc(100vh - 200px);
+  display: flex;
+  flex-direction: column;
 `;
 
 const DayHeader = styled.div<{ isDark: boolean }>`
@@ -559,19 +584,36 @@ const DayHeader = styled.div<{ isDark: boolean }>`
   }
 `;
 
-const DayTimeGrid = styled.div`
+const DayTimeGrid = styled.div<{ isDark: boolean }>`
   display: grid;
   grid-template-columns: 80px 1fr;
+  overflow-y: auto;
+  flex: 1;
+  
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: ${props => props.isDark ? themes.dark.bgSecondary : '#f0f0f0'};
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: ${props => props.isDark ? themes.dark.borderColor : '#ccc'};
+    border-radius: 4px;
+  }
 `;
 
 const DayTimeSlot = styled.div<{ isDark: boolean }>`
-  height: 60px;
+  height: 50px;
+  min-height: 50px;
   padding: 8px 12px;
   font-size: 0.85rem;
   color: ${props => props.isDark ? themes.dark.textMuted : '#666'};
   text-align: right;
   border-bottom: 1px solid ${props => props.isDark ? themes.dark.borderColor : '#f0f0f0'};
   border-right: 1px solid ${props => props.isDark ? themes.dark.borderColor : '#e0e0e0'};
+  flex-shrink: 0;
 `;
 
 const DayEventColumn = styled.div<{ isDark: boolean }>`
@@ -579,9 +621,11 @@ const DayEventColumn = styled.div<{ isDark: boolean }>`
 `;
 
 const DayHourRow = styled.div<{ isDark: boolean }>`
-  height: 60px;
+  height: 50px;
+  min-height: 50px;
   border-bottom: 1px solid ${props => props.isDark ? themes.dark.borderColor : '#f0f0f0'};
   position: relative;
+  flex-shrink: 0;
   
   &:hover {
     background: ${props => props.isDark ? 'rgba(102, 126, 234, 0.05)' : 'rgba(102, 126, 234, 0.02)'};
@@ -594,6 +638,7 @@ const DayEventBlock = styled.div<{ color: string; top: number; height: number; i
   right: 8px;
   top: ${props => props.top}px;
   height: ${props => Math.max(props.height, 30)}px;
+  min-height: 30px;
   background: ${props => props.color || '#667eea'};
   border-radius: 8px;
   padding: 8px 12px;
@@ -989,7 +1034,7 @@ const CalendarPage: React.FC = () => {
         {/* WEEK VIEW */}
         {viewType === 'week' && (
           <WeekViewContainer isDark={isDark}>
-            <WeekGrid>
+            <WeekGrid isDark={isDark}>
               <TimeColumn isDark={isDark}>
                 <WeekDayHeader isDark={isDark} isToday={false} style={{ height: '64px' }}>
                   <span style={{ fontSize: '0.8rem' }}>Time</span>
@@ -1029,8 +1074,8 @@ const CalendarPage: React.FC = () => {
                         const endTime = parseISO(event.end_time);
                         const startHour = startTime.getHours() + startTime.getMinutes() / 60;
                         const endHour = endTime.getHours() + endTime.getMinutes() / 60;
-                        const top = startHour * 60;
-                        const height = (endHour - startHour) * 60;
+                        const top = startHour * 50; // 50px per hour
+                        const height = (endHour - startHour) * 50;
 
                         return (
                           <WeekEventBlock
@@ -1061,7 +1106,7 @@ const CalendarPage: React.FC = () => {
               <div className="day-name">{format(currentDate, 'EEEE')}</div>
               <div className="day-date">{format(currentDate, 'MMMM d, yyyy')}</div>
             </DayHeader>
-            <DayTimeGrid>
+            <DayTimeGrid isDark={isDark}>
               <div>
                 {Array.from({ length: 24 }, (_, i) => (
                   <DayTimeSlot key={i} isDark={isDark}>
@@ -1086,8 +1131,8 @@ const CalendarPage: React.FC = () => {
                   const endTime = parseISO(event.end_time);
                   const startHour = startTime.getHours() + startTime.getMinutes() / 60;
                   const endHour = endTime.getHours() + endTime.getMinutes() / 60;
-                  const top = startHour * 60;
-                  const height = (endHour - startHour) * 60;
+                  const top = startHour * 50; // 50px per hour
+                  const height = (endHour - startHour) * 50;
 
                   return (
                     <DayEventBlock
