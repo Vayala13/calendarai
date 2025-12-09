@@ -3,11 +3,52 @@ const router = express.Router();
 const Anthropic = require('@anthropic-ai/sdk');
 const { authenticateToken } = require('../middleware/auth');
 const db = require('../config/database');
+const fs = require('fs');
+const path = require('path');
+const yaml = require('js-yaml');
 
 // Initialize Anthropic client
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
+
+// Load and parse agent.yaml config
+function loadAgentConfig() {
+  try {
+    const configPath = path.join(__dirname, '../../agent.yaml');
+    const fileContents = fs.readFileSync(configPath, 'utf8');
+    const config = yaml.load(fileContents);
+    return config;
+  } catch (error) {
+    console.error('Error loading agent.yaml:', error);
+    return null;
+  }
+}
+
+// Build system prompt from agent.yaml with template variable replacement
+function buildSystemPrompt(config, templateVars) {
+  if (!config || !config.instructions) {
+    // Fallback to default prompt if YAML not available
+    return 'You are CalendarAI, an intelligent scheduling assistant.';
+  }
+  
+  let instructions = config.instructions;
+  
+  // Replace template variables
+  Object.keys(templateVars).forEach(key => {
+    const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
+    instructions = instructions.replace(regex, templateVars[key]);
+  });
+  
+  // Handle conditional blocks (simple {{#if VAR}}...{{/if}} syntax)
+  if (templateVars.SELECTED_COLOR) {
+    instructions = instructions.replace(/\{\{#if SELECTED_COLOR\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
+  } else {
+    instructions = instructions.replace(/\{\{#if SELECTED_COLOR\}\}[\s\S]*?\{\{\/if\}\}/g, '');
+  }
+  
+  return instructions;
+}
 
 // Helper to get user's calendar context
 async function getUserContext(userId) {
@@ -105,9 +146,69 @@ router.post('/message', authenticateToken, async (req, res) => {
       ? `\n\nCURRENT GOOGLE CALENDAR EVENTS (from extension):\n${calendarEvents.map(e => `- ${e.title}${e.time ? ` at ${e.time}` : ''}`).join('\n')}`
       : '';
 
-    // Build the system prompt
-    const systemPrompt = `You are CalendarAI's intelligent scheduling assistant, powered by Claude. You help users manage their time effectively based on their priorities.
-
+    // Get user's timezone from request or default to system timezone
+    const userTimeZone = req.body.context?.timeZone || 
+                        req.body.timeZone || 
+                        Intl.DateTimeFormat().resolvedOptions().timeZone || 
+                        'America/Los_Angeles';
+    
+    // Get current date/time in user's timezone
+    const now = new Date();
+    
+    // Format current date in user's timezone (YYYY-MM-DD)
+    const currentDate = now.toLocaleDateString('en-CA', { timeZone: userTimeZone }); // en-CA gives YYYY-MM-DD format
+    
+    // Get tomorrow's date (next calendar day at midnight in user's timezone)
+    // Create a date object for today at midnight in user's timezone, then add 1 day
+    const todayParts = currentDate.split('-');
+    const todayInUserTZ = new Date(Date.UTC(
+      parseInt(todayParts[0]), 
+      parseInt(todayParts[1]) - 1, 
+      parseInt(todayParts[2])
+    ));
+    const tomorrowInUserTZ = new Date(todayInUserTZ);
+    tomorrowInUserTZ.setUTCDate(tomorrowInUserTZ.getUTCDate() + 1);
+    const tomorrowDate = tomorrowInUserTZ.toISOString().split('T')[0];
+    
+    // Format current time in user's timezone
+    const currentTime = now.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit', 
+      hour12: true,
+      timeZone: userTimeZone 
+    });
+    const dayOfWeek = now.toLocaleDateString('en-US', { 
+      weekday: 'long',
+      timeZone: userTimeZone 
+    });
+    
+    // Load agent config
+    const agentConfig = loadAgentConfig();
+    
+    // Get selected color from request
+    const selectedColor = req.body.context?.selectedColor || req.body.selectedColor;
+    
+    // Prepare template variables for YAML config
+    const templateVars = {
+      CURRENT_DATETIME: `${dayOfWeek}, ${currentDate} ${currentTime} (${userTimeZone})`,
+      USER_TIMEZONE: userTimeZone,
+      TODAY_DATE: currentDate,
+      DAY_OF_WEEK: dayOfWeek,
+      TOMORROW_DATE: tomorrowDate,
+      SELECTED_COLOR: selectedColor || ''
+    };
+    
+    // Build base system prompt from agent.yaml
+    let systemPrompt = buildSystemPrompt(agentConfig, templateVars);
+    
+    // Add selected color info if available
+    if (selectedColor) {
+      systemPrompt += `\n\nUSER SELECTED COLOR: The user has picked color ${selectedColor} from the color picker. When creating events, automatically use this color unless the user explicitly specifies a different color in their message.`;
+    }
+    
+    // Add dynamic user context
+    systemPrompt += `
+    
 CURRENT USER CONTEXT:
 ${context ? `
 PRIORITIES (ranked by importance):
@@ -124,70 +225,7 @@ ${context.weeklyProgress.length > 0
   : 'No events tracked yet this week'}
 
 WORK HOURS: ${context.workHours.start} - ${context.workHours.end}
-` : 'Unable to load user context'}${calendarContext}
-
-YOUR CAPABILITIES:
-1. Analyze the user's schedule and priorities
-2. Suggest optimal times for activities based on their priorities
-3. Help balance their time across different life areas
-4. Provide scheduling advice and productivity tips
-5. Answer questions about their calendar and commitments
-6. Help them plan their week/day effectively
-7. **ADD EVENTS** to Google Calendar when the user asks
-8. **REMOVE EVENTS** from Google Calendar when the user asks
-
-GUIDELINES:
-- Be helpful, friendly, and concise
-- Give specific, actionable advice based on their actual data
-- If they're behind on a priority, suggest specific times to schedule it
-- Consider their work hours when making suggestions
-- Use emojis sparingly to make responses engaging
-- **When user asks to add/create an event**: Extract title, date, time, and duration. Return a structured action.
-- **When user asks to remove/delete an event**: Identify the event by title and date. Return a structured action.
-- Always be encouraging about their progress
-
-ACTION FORMAT:
-When the user explicitly asks to ADD, CREATE, SCHEDULE, or BOOK an event, you MUST return a JSON response with this exact structure:
-\`\`\`json
-{
-  "message": "I've added [event title] to your calendar for [date/time].",
-  "actions": [
-    {
-      "type": "add_event",
-      "event": {
-        "title": "Event title here",
-        "description": "Optional description",
-        "start_time": "2025-12-10T14:00:00Z",
-        "end_time": "2025-12-10T15:00:00Z",
-        "location": "Optional location"
-      }
-    }
-  ]
-}
-\`\`\`
-
-When the user asks to REMOVE, DELETE, or CANCEL an event, return:
-\`\`\`json
-{
-  "message": "I've removed [event title] from your calendar.",
-  "actions": [
-    {
-      "type": "remove_event",
-      "eventTitle": "Event title to find and remove",
-      "date": "2025-12-10" // Optional: helps narrow search
-    }
-  ]
-}
-\`\`\`
-
-IMPORTANT:
-- ALWAYS wrap your JSON response in \`\`\`json code blocks
-- Extract date/time from user's message (e.g., "tomorrow at 2pm" = calculate actual date/time)
-- Use ISO 8601 format for dates (YYYY-MM-DDTHH:mm:ssZ)
-- If user doesn't specify duration, default to 1 hour
-- If no events need to be added/removed, respond normally without JSON/actions
-
-Remember: You're their personal AI scheduling assistant helping them live a balanced, productive life aligned with their priorities.`;
+` : 'Unable to load user context'}${calendarContext}`;
 
     // Build messages array
     const messages = [
@@ -221,8 +259,8 @@ Remember: You're their personal AI scheduling assistant helping them live a bala
       } else if (block.type === 'text') {
         assistantMessage = block.text;
         
-        // Try to parse JSON actions from the response
-        // Look for JSON code blocks or structured data
+        // Try to parse JSON actions from the response (but don't show JSON to user)
+        // Look for JSON code blocks and extract actions silently
         try {
           // Check if response contains JSON structure
           const jsonMatch = assistantMessage.match(/```json\s*([\s\S]*?)\s*```/) || 
@@ -232,21 +270,24 @@ Remember: You're their personal AI scheduling assistant helping them live a bala
             const parsed = JSON.parse(jsonMatch[1]);
             if (parsed.actions && Array.isArray(parsed.actions)) {
               actions = parsed.actions;
-              // Use the message from JSON if available, otherwise keep original
+              // Remove the JSON code block from the message - only show natural language
+              assistantMessage = assistantMessage.replace(/```json\s*[\s\S]*?\s*```/g, '').replace(/```\s*[\s\S]*?\s*```/g, '').trim();
+              // Use the message from JSON if available, otherwise use cleaned message
               if (parsed.message) {
                 assistantMessage = parsed.message;
               }
             }
           } else {
-            // Try to parse the entire response as JSON
+            // Try to parse the entire response as JSON (hidden)
             const parsed = JSON.parse(assistantMessage);
             if (parsed.actions && Array.isArray(parsed.actions)) {
               actions = parsed.actions;
-              assistantMessage = parsed.message || assistantMessage;
+              // Only show the natural language message, not the JSON
+              assistantMessage = parsed.message || 'Done!';
             }
           }
         } catch (e) {
-          // Not JSON, continue with text response
+          // Not JSON, continue with text response as-is
         }
       }
     }

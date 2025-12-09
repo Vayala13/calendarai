@@ -5,6 +5,7 @@ const API_BASE_URL = 'http://localhost:3001/api';
 
 let messages = [];
 let isLoading = false;
+let selectedColor = null; // Store selected color (hex format)
 
 // DOM Elements
 const messagesContainer = document.getElementById('messages-container');
@@ -13,6 +14,16 @@ const sendBtn = document.getElementById('send-btn');
 const closeBtn = document.getElementById('close-btn');
 const loadingIndicator = document.getElementById('loading-indicator');
 const suggestionButtons = document.querySelectorAll('.suggestion-btn');
+const colorPickerBtn = document.getElementById('color-picker-btn');
+const colorPickerModal = document.getElementById('color-picker-modal');
+const colorWheel = document.getElementById('color-wheel');
+const hexInput = document.getElementById('hex-input');
+const applyColorBtn = document.getElementById('apply-color-btn');
+const closeColorPicker = document.getElementById('close-color-picker');
+const selectedColorIndicator = document.getElementById('selected-color-indicator');
+const colorSwatch = document.getElementById('color-swatch');
+const clearColorBtn = document.getElementById('clear-color-btn');
+const presetColors = document.querySelectorAll('.preset-color');
 
 // Initialize
 function init() {
@@ -22,7 +33,7 @@ function init() {
   });
 
   // Send button
-  sendBtn.addEventListener('click', sendMessage);
+  sendBtn.addEventListener('click', () => sendMessage());
   
   // Enter key to send
   messageInput.addEventListener('keydown', (e) => {
@@ -47,6 +58,71 @@ function init() {
     });
   });
 
+  // Color picker button
+  colorPickerBtn.addEventListener('click', () => {
+    colorPickerModal.style.display = 'flex';
+    if (selectedColor) {
+      colorWheel.value = selectedColor;
+      hexInput.value = selectedColor;
+    }
+  });
+
+  // Close color picker
+  closeColorPicker.addEventListener('click', () => {
+    colorPickerModal.style.display = 'none';
+  });
+
+  // Close modal on background click
+  colorPickerModal.addEventListener('click', (e) => {
+    if (e.target === colorPickerModal) {
+      colorPickerModal.style.display = 'none';
+    }
+  });
+
+  // Sync color wheel and hex input
+  colorWheel.addEventListener('input', (e) => {
+    hexInput.value = e.target.value.toUpperCase();
+  });
+
+  hexInput.addEventListener('input', (e) => {
+    const hex = e.target.value;
+    if (/^#[0-9A-Fa-f]{0,6}$/.test(hex)) {
+      if (hex.length === 7) {
+        colorWheel.value = hex;
+      }
+    }
+  });
+
+  // Preset colors
+  presetColors.forEach(preset => {
+    preset.addEventListener('click', () => {
+      const color = preset.getAttribute('data-color');
+      colorWheel.value = color;
+      hexInput.value = color.toUpperCase();
+    });
+  });
+
+  // Apply color
+  applyColorBtn.addEventListener('click', () => {
+    const color = colorWheel.value;
+    selectedColor = color;
+    updateColorIndicator();
+    colorPickerModal.style.display = 'none';
+    // Show a brief message that color is selected
+    if (messageInput.value.trim() === '') {
+      messageInput.placeholder = `Color selected: ${color.toUpperCase()}. Ask me to add an event...`;
+      setTimeout(() => {
+        messageInput.placeholder = 'Ask me anything about your calendar...';
+      }, 3000);
+    }
+  });
+
+  // Clear color
+  clearColorBtn.addEventListener('click', () => {
+    selectedColor = null;
+    updateColorIndicator();
+  });
+
   // Listen for events from parent (Google Calendar page)
   window.addEventListener('message', (event) => {
     if (event.data.type === 'CALENDARAI_EVENTS' || event.data.type === 'CALENDARAI_EVENTS_UPDATE') {
@@ -61,6 +137,10 @@ function init() {
 
 // Send message
 async function sendMessage(text) {
+  // Handle case where event object might be passed instead of text
+  if (text && typeof text !== 'string') {
+    text = null; // Ignore non-string values (like event objects)
+  }
   const messageText = text || messageInput.value.trim();
   if (!messageText || isLoading) return;
 
@@ -98,8 +178,12 @@ async function sendMessage(text) {
         })),
         context: {
           calendarEvents: window.currentCalendarEvents || [],
-          currentUrl: window.location.href
-        }
+          currentUrl: window.location.href,
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          selectedColor: selectedColor // Include selected color in context
+        },
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        selectedColor: selectedColor // Also include at top level for easy access
       })
     });
 
@@ -129,7 +213,9 @@ async function sendMessage(text) {
     }
 
   } catch (error) {
-    addMessage('assistant', `❌ Error: ${error.message}`, true);
+    console.error('Chat error:', error);
+    const errorMessage = error.message || 'Failed to get response from Claude';
+    addMessage('assistant', `❌ Error: ${errorMessage}`, true);
   } finally {
     isLoading = false;
     updateUI();
@@ -252,18 +338,46 @@ async function addEventToGoogleCalendar(eventData) {
     }
 
     // Ensure dates are in ISO format
+    // Get user's timezone
+    const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    
+    // Use selected color from color picker if available, otherwise use AI-specified color
+    // Priority: AI-specified color > user-selected color > no color
+    const eventColor = eventData.color || selectedColor;
+    
     const eventPayload = {
       title: eventData.title,
       description: eventData.description || '',
       start_time: eventData.start_time || eventData.startTime,
       end_time: eventData.end_time || eventData.endTime,
-      location: eventData.location || ''
+      location: eventData.location || '',
+      timeZone: userTimeZone,
+      ...(eventData.recurrence && { recurrence: eventData.recurrence }),
+      ...(eventColor && { color: eventColor }),
+      ...(eventData.colorId && { colorId: eventData.colorId })
     };
+    
+    // Only clear selected color if it was used (not if AI specified a different color)
+    if (selectedColor && eventColor === selectedColor) {
+      selectedColor = null;
+      updateColorIndicator();
+    }
 
     // Validate required fields
     if (!eventPayload.title || !eventPayload.start_time || !eventPayload.end_time) {
       throw new Error('Missing required event fields (title, start_time, end_time)');
     }
+
+    // Log the event being created for debugging
+    console.log('Creating event:', {
+      title: eventPayload.title,
+      start: eventPayload.start_time,
+      end: eventPayload.end_time,
+      parsedStart: new Date(eventPayload.start_time).toLocaleString(),
+      parsedEnd: new Date(eventPayload.end_time).toLocaleString(),
+      recurrence: eventPayload.recurrence || 'none',
+      color: eventPayload.color || eventPayload.colorId || 'default'
+    });
 
     const response = await fetch(`${API_BASE_URL}/google/create-event`, {
       method: 'POST',
@@ -277,13 +391,10 @@ async function addEventToGoogleCalendar(eventData) {
     const data = await response.json();
 
     if (response.ok) {
-      addMessage('assistant', `✅ Added "${eventData.title}" to your Google Calendar!`, false);
-      // Refresh calendar view
-      setTimeout(() => {
-        window.parent.postMessage({ type: 'CALENDARAI_REFRESH' }, '*');
-        // Also trigger a page reload to show the new event
-        window.parent.location.reload();
-      }, 1000);
+      const isRecurring = eventData.recurrence ? ' (recurring)' : '';
+      addMessage('assistant', `✅ Added "${eventData.title}" to your Google Calendar${isRecurring}!`, false);
+      // Notify parent to refresh calendar view (without reloading page)
+      window.parent.postMessage({ type: 'CALENDARAI_REFRESH' }, '*');
     } else {
       throw new Error(data.error || 'Failed to add event');
     }
@@ -313,11 +424,8 @@ async function removeEventFromGoogleCalendar(eventId) {
 
     if (response.ok) {
       addMessage('assistant', '✅ Event removed from your Google Calendar!', false);
-      // Refresh calendar view
-      setTimeout(() => {
-        window.parent.postMessage({ type: 'CALENDARAI_REFRESH' }, '*');
-        window.parent.location.reload();
-      }, 1000);
+      // Notify parent to refresh calendar view (without reloading page)
+      window.parent.postMessage({ type: 'CALENDARAI_REFRESH' }, '*');
     } else {
       throw new Error(data.error || 'Failed to remove event');
     }
@@ -492,6 +600,21 @@ async function getAuthToken() {
       resolve(result.calendarai_token || null);
     });
   });
+}
+
+// Update color indicator
+function updateColorIndicator() {
+  if (selectedColor) {
+    selectedColorIndicator.style.display = 'flex';
+    colorSwatch.style.backgroundColor = selectedColor;
+    // Update the indicator text to show hex value
+    const indicatorText = selectedColorIndicator.querySelector('span');
+    if (indicatorText) {
+      indicatorText.textContent = `Color: ${selectedColor.toUpperCase()}`;
+    }
+  } else {
+    selectedColorIndicator.style.display = 'none';
+  }
 }
 
 // Update UI state

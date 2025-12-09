@@ -352,22 +352,72 @@ router.post('/create-event', authenticateToken, async (req, res) => {
   try {
     const calendar = await getCalendarClient(req.user.user_id);
     
-    const { title, description, start_time, end_time, location, colorId } = req.body;
+    const { title, description, start_time, end_time, location, colorId, color, recurrence } = req.body;
+    
+    // Validate required fields
+    if (!title || !start_time || !end_time) {
+      return res.status(400).json({ error: 'Missing required fields: title, start_time, end_time' });
+    }
+    
+    // Handle color - can be colorId (1-11) or color name
+    let finalColorId = colorId;
+    if (!finalColorId && color) {
+      finalColorId = getColorIdFromName(color);
+    }
+    
+    // Parse and validate dates
+    let startDate, endDate;
+    try {
+      startDate = new Date(start_time);
+      endDate = new Date(end_time);
+      
+      // Check if dates are valid
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        return res.status(400).json({ error: 'Invalid date format. Use ISO 8601 format (YYYY-MM-DDTHH:mm:ss)' });
+      }
+      
+      // Check if end is after start
+      if (endDate <= startDate) {
+        return res.status(400).json({ error: 'End time must be after start time' });
+      }
+    } catch (dateError) {
+      return res.status(400).json({ error: `Invalid date: ${dateError.message}` });
+    }
+    
+    // Get user's timezone from request body or default
+    const userTimeZone = req.body.timeZone || 
+                        Intl.DateTimeFormat().resolvedOptions().timeZone || 
+                        'America/Los_Angeles';
     
     const googleEvent = {
       summary: title,
       description: description || '',
       start: {
-        dateTime: new Date(start_time).toISOString(),
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Los_Angeles'
+        dateTime: startDate.toISOString(),
+        timeZone: userTimeZone
       },
       end: {
-        dateTime: new Date(end_time).toISOString(),
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Los_Angeles'
+        dateTime: endDate.toISOString(),
+        timeZone: userTimeZone
       },
       ...(location && { location }),
-      ...(colorId && { colorId })
+      ...(finalColorId && { colorId: finalColorId })
     };
+    
+    // Add recurrence rule if provided
+    if (recurrence) {
+      // Ensure recurrence is in array format (Google Calendar API expects array)
+      googleEvent.recurrence = Array.isArray(recurrence) ? recurrence : [recurrence];
+    }
+    
+    console.log('Creating Google Calendar event:', {
+      title,
+      start: googleEvent.start.dateTime,
+      end: googleEvent.end.dateTime,
+      timeZone: userTimeZone,
+      colorId: finalColorId || 'default',
+      recurrence: googleEvent.recurrence || 'none'
+    });
     
     const response = await calendar.events.insert({
       calendarId: 'primary',
@@ -510,6 +560,56 @@ function getGoogleColorId(hexColor) {
     return colorMap[hexColor.toLowerCase()];
   }
   return '9'; // Default to blue
+}
+
+// Map color names or hex colors to Google Calendar color IDs
+// Google Calendar color IDs: 1=Lavender, 2=Sage, 3=Grape, 4=Flamingo, 5=Banana, 6=Tangerine, 7=Peacock, 8=Graphite, 9=Blueberry, 10=Basil, 11=Tomato
+function getColorIdFromName(colorName) {
+  if (!colorName) return null;
+  
+  // If it's a hex color, find closest match
+  if (colorName.startsWith('#')) {
+    return getGoogleColorId(colorName);
+  }
+  
+  const colorNameMap = {
+    // Google Calendar color names
+    'lavender': '1',
+    'sage': '2',
+    'grape': '3',
+    'flamingo': '4',
+    'pink': '4',
+    'banana': '5',
+    'yellow': '5',
+    'tangerine': '6',
+    'orange': '6',
+    'peacock': '7',
+    'teal': '7',
+    'cyan': '7',
+    'graphite': '8',
+    'gray': '8',
+    'grey': '8',
+    'blueberry': '9',
+    'blue': '9',
+    'basil': '10',
+    'green': '10',
+    'tomato': '11',
+    'red': '11',
+    // Common color names
+    'purple': '3',
+    'indigo': '1',
+    'lime': '10',
+    'emerald': '10',
+    'amber': '5',
+    'rose': '4',
+    'violet': '3',
+    'fuchsia': '4',
+    'sky': '7',
+    'slate': '8',
+  };
+  
+  const normalizedName = colorName.toLowerCase().trim();
+  return colorNameMap[normalizedName] || null;
 }
 
 module.exports = router;

@@ -96,10 +96,9 @@
     
     // Refresh calendar when events are added/removed
     if (event.data.type === 'CALENDARAI_REFRESH') {
-      // Reload the page to show updated calendar
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
+      // Google Calendar will auto-refresh when it detects changes via its own polling
+      // No need to manually refresh - just let it happen naturally
+      console.log('Event added/removed - Google Calendar will auto-refresh');
     }
   });
 
