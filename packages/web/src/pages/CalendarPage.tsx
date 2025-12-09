@@ -16,8 +16,10 @@ const PageContainer = styled.div<{ isDark: boolean }>`
 `;
 
 const ContentContainer = styled.div`
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
+  width: 100%;
+  padding: 0 10px;
 `;
 
 const Header = styled.div<{ isDark: boolean }>`
@@ -194,6 +196,7 @@ const DaysGrid = styled.div`
 
 const DayCell = styled.div<{ isCurrentMonth: boolean; isToday: boolean; isDark: boolean }>`
   min-height: 120px;
+  min-width: 140px;
   padding: 8px;
   border: 1px solid ${props => props.isDark ? themes.dark.borderColor : themes.light.borderColor};
   background: ${props => {
@@ -238,14 +241,13 @@ const EventsContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 3px;
-  max-height: 80px;
-  overflow-y: auto;
+  overflow: hidden;
 `;
 
 const EventChip = styled.div<{ color: string }>`
   background: ${props => props.color || '#667eea'};
   color: white;
-  padding: 3px 6px;
+  padding: 4px 8px;
   border-radius: 4px;
   font-size: 0.75rem;
   white-space: nowrap;
@@ -257,6 +259,22 @@ const EventChip = styled.div<{ color: string }>`
   &:hover {
     transform: scale(1.02);
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+`;
+
+const MoreEventsChip = styled.div<{ isDark: boolean }>`
+  color: ${props => props.isDark ? themes.dark.textPrimary : themes.light.textPrimary};
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+  background: ${props => props.isDark ? 'rgba(102, 126, 234, 0.2)' : 'rgba(102, 126, 234, 0.15)'};
+  
+  &:hover {
+    background: ${props => props.isDark ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.25)'};
   }
 `;
 
@@ -1013,7 +1031,7 @@ const CalendarPage: React.FC = () => {
                       {format(day, 'd')}
                     </DayNumber>
                     <EventsContainer>
-                      {dayEvents.map(event => (
+                      {dayEvents.slice(0, 3).map(event => (
                         <EventChip
                           key={event.event_id}
                           color={event.priority_color || (isDark ? themes.dark.primary : themes.light.primary)}
@@ -1023,6 +1041,18 @@ const CalendarPage: React.FC = () => {
                           {event.title}
                         </EventChip>
                       ))}
+                      {dayEvents.length > 3 && (
+                        <MoreEventsChip 
+                          isDark={isDark}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDayClick(day);
+                          }}
+                          title="Click to see all events"
+                        >
+                          +{dayEvents.length - 3} more
+                        </MoreEventsChip>
+                      )}
                     </EventsContainer>
                   </DayCell>
                 );
