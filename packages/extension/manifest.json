@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "CalendarAI - Google Calendar Assistant",
+  "version": "1.0.0",
+  "description": "AI-powered chatbot extension for Google Calendar that can add, remove, and manage events",
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://calendar.google.com/*",
+    "http://localhost:3001/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://calendar.google.com/*"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_end"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["chatbot.html", "chatbot.js", "chatbot.css"],
+      "matches": ["https://calendar.google.com/*"]
+    }
+  ]
+}
+

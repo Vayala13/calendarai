@@ -347,6 +347,147 @@ router.post('/sync-scenario/:scenarioId', authenticateToken, async (req, res) =>
   }
 });
 
+// Create event directly in Google Calendar (for extension)
+router.post('/create-event', authenticateToken, async (req, res) => {
+  try {
+    const calendar = await getCalendarClient(req.user.user_id);
+    
+    const { title, description, start_time, end_time, location, colorId } = req.body;
+    
+    const googleEvent = {
+      summary: title,
+      description: description || '',
+      start: {
+        dateTime: new Date(start_time).toISOString(),
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Los_Angeles'
+      },
+      end: {
+        dateTime: new Date(end_time).toISOString(),
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Los_Angeles'
+      },
+      ...(location && { location }),
+      ...(colorId && { colorId })
+    };
+    
+    const response = await calendar.events.insert({
+      calendarId: 'primary',
+      resource: googleEvent
+    });
+    
+    res.json({
+      success: true,
+      event: response.data,
+      eventId: response.data.id
+    });
+  } catch (error) {
+    console.error('Error creating Google Calendar event:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// List events from Google Calendar (for extension to search)
+router.get('/list-events', authenticateToken, async (req, res) => {
+  try {
+    const calendar = await getCalendarClient(req.user.user_id);
+    const { timeMin, timeMax, maxResults = 50 } = req.query;
+    
+    const params = {
+      calendarId: 'primary',
+      singleEvents: true,
+      orderBy: 'startTime',
+      maxResults: parseInt(maxResults)
+    };
+    
+    if (timeMin) params.timeMin = timeMin;
+    if (timeMax) params.timeMax = timeMax;
+    
+    const response = await calendar.events.list(params);
+    
+    res.json({
+      success: true,
+      events: response.data.items || []
+    });
+  } catch (error) {
+    console.error('Error listing Google Calendar events:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete event from Google Calendar (for extension)
+router.delete('/delete-event/:eventId', authenticateToken, async (req, res) => {
+  try {
+    const calendar = await getCalendarClient(req.user.user_id);
+    const { eventId } = req.params;
+    
+    await calendar.events.delete({
+      calendarId: 'primary',
+      eventId: eventId
+    });
+    
+    res.json({ success: true, message: 'Event deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting Google Calendar event:', error);
+    if (error.code === 404) {
+      res.status(404).json({ error: 'Event not found' });
+    } else {
+      res.status(500).json({ error: error.message });
+    }
+  }
+});
+
+// Update event in Google Calendar (for extension)
+router.put('/update-event/:eventId', authenticateToken, async (req, res) => {
+  try {
+    const calendar = await getCalendarClient(req.user.user_id);
+    const { eventId } = req.params;
+    const { title, description, start_time, end_time, location, colorId } = req.body;
+    
+    // First get the existing event
+    const existingEvent = await calendar.events.get({
+      calendarId: 'primary',
+      eventId: eventId
+    });
+    
+    const googleEvent = {
+      ...existingEvent.data,
+      summary: title || existingEvent.data.summary,
+      description: description !== undefined ? description : existingEvent.data.description,
+      ...(start_time && {
+        start: {
+          dateTime: new Date(start_time).toISOString(),
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Los_Angeles'
+        }
+      }),
+      ...(end_time && {
+        end: {
+          dateTime: new Date(end_time).toISOString(),
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Los_Angeles'
+        }
+      }),
+      ...(location !== undefined && { location }),
+      ...(colorId && { colorId })
+    };
+    
+    const response = await calendar.events.update({
+      calendarId: 'primary',
+      eventId: eventId,
+      resource: googleEvent
+    });
+    
+    res.json({
+      success: true,
+      event: response.data
+    });
+  } catch (error) {
+    console.error('Error updating Google Calendar event:', error);
+    if (error.code === 404) {
+      res.status(404).json({ error: 'Event not found' });
+    } else {
+      res.status(500).json({ error: error.message });
+    }
+  }
+});
+
 // Map priority colors to Google Calendar color IDs
 function getGoogleColorId(hexColor) {
   // Google Calendar has 11 color options (1-11)

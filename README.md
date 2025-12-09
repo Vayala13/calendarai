@@ -1,157 +1,139 @@
-# 📅 CalendarAI
+# 📅 CalendarAI Monorepo
 
-A dynamic, AI-powered calendar application that helps you juggle life's responsibilities with intelligent scheduling and priority management.
+AI-powered calendar management system with standalone web app and Google Calendar extension.
 
-## 🎯 Vision
+## 🏗️ Structure
 
-CalendarAI brings the power of AI assistance to calendar management, featuring modes inspired by Cursor's interface:
-- **What-If Mode**: Explore scheduling scenarios without committing changes
-- **Agent Mode**: Let AI make permanent optimizations to your calendar based on priorities
+```
+calendarai/
+├── packages/
+│   ├── backend/      # Node.js + Express API server
+│   ├── web/         # React standalone web application
+│   └── extension/   # Chrome/Edge browser extension
+├── package.json     # Root workspace configuration
+└── README.md
+```
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Node.js >= 16
+- MySQL database
+- npm >= 8
+
+### Installation
+
+```bash
+# Install all dependencies
+npm install
+
+# Or install for specific package
+npm install --workspace=packages/backend
+npm install --workspace=packages/web
+```
+
+### Development
+
+```bash
+# Run backend only
+npm run dev:backend
+
+# Run web app only
+npm run dev:web
+
+# Run both (backend + web)
+npm run dev:all
+```
+
+## 📦 Packages
+
+### `@calendarai/backend`
+- Express.js API server
+- MySQL database
+- Google Calendar integration
+- AI chat endpoints
+
+**Setup:**
+1. Copy `.env.example` to `packages/backend/.env`
+2. Configure database credentials
+3. Run database migrations: `mysql -u root -p calendarai_db < packages/backend/database/schema.sql`
+4. Start backend: `npm run dev:backend`
+
+### `@calendarai/web`
+- React + TypeScript
+- Standalone calendar UI
+- Full feature set
+
+**Setup:**
+1. Backend must be running on `http://localhost:3001`
+2. Start web app: `npm run dev:web`
+3. Open `http://localhost:3000`
+
+### `@calendarai/extension`
+- Browser extension
+- Google Calendar integration
+- Chatbot interface
+
+**Setup:**
+1. Open Chrome/Edge → `chrome://extensions/`
+2. Enable "Developer mode"
+3. Click "Load unpacked"
+4. Select `packages/extension/` folder
+5. Configure auth token in extension popup
+
+## 🛠️ Scripts
+
+- `npm run dev:backend` - Start backend server
+- `npm run dev:web` - Start web app
+- `npm run dev:all` - Start both
+- `npm run build:web` - Build web app for production
+- `npm run clean` - Remove all node_modules
+
+## 📝 Documentation
+
+- [Backend README](packages/backend/README.md)
+- [Web App README](packages/web/README.md) - *Coming soon*
+- [Extension README](packages/extension/README.md)
+- [Google Setup Guide](GOOGLE_SETUP.md)
+- [Setup Guide](SETUP.md)
 
 ## ✨ Features
 
 ### Core Functionality
 - 🤔 **What-If Scenarios** - Test different scheduling arrangements without permanent changes
-- 🤖 **AI Agent Integration** - Automated calendar optimization based on your priorities
+- 🤖 **AI Agent Integration** - Automated calendar optimization based on priorities
 - 📊 **Priority Management** - Rank life responsibilities and allocate time accordingly
 - ⏰ **Smart Time Allocation** - Manual or AI-driven hour distribution
-- 📥 **Google Calendar Export** - Download .ics files for seamless integration
+- 📥 **Google Calendar Integration** - Sync with Google Calendar
 
 ### User Experience
-- **Dynamic Calendar Views** - Responsive, modern calendar interface
+- **Standalone Web App** - Full-featured calendar interface
+- **Browser Extension** - Chatbot assistant for Google Calendar
 - **Priority-Based Scheduling** - Focus time on what matters most
 - **Flexible Time Management** - Choose between manual control or AI automation
-- **Scenario Planning** - Visualize different scheduling approaches
 
 ## 🚀 Tech Stack
 
-- **React 18** with TypeScript for type safety and modern development
-- **React Router v6** for seamless navigation
-- **Styled Components** for component-based styling
-- **Zustand** for lightweight, powerful state management
-- **date-fns** for robust date manipulation
-- **ics** library for calendar file generation
-- **React Icons** for consistent iconography
+### Backend
+- Node.js + Express
+- MySQL
+- Google Calendar API
+- Anthropic Claude API
 
-## 🏗️ Architecture
+### Web App
+- React 18 + TypeScript
+- Styled Components
+- React Router
+- Zustand
 
-### Flat, Powerful Folder Structure
-```
-src/
-├── pages/          # Feature-based page components
-├── services/       # Business logic & API layer  
-├── styles/         # Styled components
-└── assets/         # Static resources
-```
-
-**Why This Structure Rocks:**
-- ✅ **Minimal Nesting** - Fast navigation, less decision fatigue
-- ✅ **Pages-First** - Each user journey gets its own page
-- ✅ **Centralized Logic** - All business logic in services/
-- ✅ **Easy Scaling** - Add features by adding pages, not restructuring
-- ✅ **Developer Friendly** - Instantly know where to find/add code
-
-### Planned Pages
-- `CalendarPage.tsx` - Main calendar interface
-- `PrioritiesPage.tsx` - Priority setup & management
-- `WhatIfPage.tsx` - Scenario planning interface
-- `AgentPage.tsx` - AI agent configuration
-- `ExportPage.tsx` - Calendar export tools
-- `SettingsPage.tsx` - App preferences
-
-## 🛠️ Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd calendarai
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Start development server**
-   ```bash
-   npm start
-   ```
-
-4. **Open your browser**
-   Navigate to `http://localhost:3000`
-
-## 📝 Development Scripts
-
-```bash
-npm start       # Start development server
-npm build       # Create production build
-npm test        # Run test suite
-npm eject       # Eject from Create React App (use carefully)
-```
-
-## 🎨 Development Workflow
-
-### Adding New Features
-1. **Create Page Component** - Add new page in `src/pages/`
-2. **Add Business Logic** - Implement logic in `src/services/`
-3. **Style Components** - Create styled components in `src/styles/`
-4. **Update Routing** - Add route in `App.tsx`
-
-### State Management
-Using Zustand for clean, simple state management:
-- Separate stores for calendar, priorities, and agent states
-- Minimal boilerplate, maximum productivity
-
-### Styling Approach
-Styled Components for:
-- Component-scoped styling
-- Dynamic theming capabilities
-- TypeScript integration
-- No CSS naming conflicts
-
-## 🔮 Roadmap
-
-### Phase 1: Foundation ✅
-- [x] Project setup and basic structure
-- [x] Landing page with feature preview
-- [x] Development environment configuration
-
-### Phase 2: Core Calendar (Next)
-- [ ] Calendar grid component
-- [ ] Event creation and editing
-- [ ] Basic scheduling interface
-- [ ] Time slot management
-
-### Phase 3: Priority System
-- [ ] Priority ranking interface
-- [ ] Time allocation algorithms
-- [ ] Manual vs. AI time distribution
-- [ ] Priority-based scheduling
-
-### Phase 4: AI Integration
-- [ ] What-If scenario engine
-- [ ] Agent mode implementation
-- [ ] Calendar optimization algorithms
-- [ ] Smart recommendations
-
-### Phase 5: Export & Integration
-- [ ] ICS file generation
-- [ ] Google Calendar compatibility
-- [ ] Batch export options
-- [ ] Sync capabilities
+### Extension
+- Vanilla JavaScript
+- Chrome Extension API
+- Google Calendar API
 
 ## 🤝 Contributing
 
-This project uses a flat, powerful architecture designed for:
-- **Fast development** - Minimal navigation overhead
-- **Easy maintenance** - Clear separation of concerns
-- **Scalable growth** - Add features without refactoring
-
-### Development Guidelines
-- Keep business logic in `services/`
-- Create reusable styled components in `styles/`
-- Follow the pages-first approach for new features
-- Maintain TypeScript strict mode compliance
+Each package can be developed independently while sharing the backend API.
 
 ## 📄 License
 
