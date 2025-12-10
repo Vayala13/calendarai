@@ -91,11 +91,18 @@ npm run dev:all
 
 ## 📝 Documentation
 
-- [Backend README](packages/backend/README.md)
-- [Web App README](packages/web/README.md) - *Coming soon*
-- [Extension README](packages/extension/README.md)
-- [Google Setup Guide](GOOGLE_SETUP.md)
-- [Setup Guide](SETUP.md)
+### Project Documentation
+- [Project Part B - Database Design](PROJECT_PART_B.md) - Database schema, architecture, and system design
+- [Project Part C - Final Documentation](PROJECT_PART_C.md) - Complete project documentation with implementation details
+- [Testing Guide](TESTING_GUIDE.md) - Comprehensive testing instructions for all 6 database operations
+- [Setup Guide](SETUP.md) - Installation and configuration instructions
+- [Google Calendar Setup](GOOGLE_SETUP.md) - Google OAuth and Calendar API setup
+
+### Package Documentation
+- [Backend API Documentation](packages/backend/README.md) - API endpoints and backend architecture
+- [Web App Documentation](packages/web/README.md) - React app architecture and features
+- [Extension Documentation](packages/extension/README.md) - Browser extension setup and usage
+- [Extension Testing](packages/extension/TESTING.md) - Extension testing guide
 
 ## ✨ Features
 

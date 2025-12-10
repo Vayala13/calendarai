@@ -5,6 +5,7 @@ import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSa
 import { useTheme, themes } from '../context/ThemeContext';
 import GoogleCalendarSync from '../components/GoogleCalendarSync';
 import ChatSidebar from '../components/ChatSidebar';
+import DayEventsModal from '../components/DayEventsModal';
 
 // ============ STYLED COMPONENTS ============
 
@@ -731,8 +732,10 @@ const CalendarPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showGoogleSync, setShowGoogleSync] = useState(false);
+  const [showDayEventsModal, setShowDayEventsModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [dayEventsModalDate, setDayEventsModalDate] = useState<Date | null>(null);
   const [formData, setFormData] = useState<EventFormData>({
     title: '',
     description: '',
@@ -1046,7 +1049,8 @@ const CalendarPage: React.FC = () => {
                           isDark={isDark}
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDayClick(day);
+                            setDayEventsModalDate(day);
+                            setShowDayEventsModal(true);
                           }}
                           title="Click to see all events"
                         >
@@ -1276,6 +1280,23 @@ const CalendarPage: React.FC = () => {
 
       {showGoogleSync && (
         <GoogleCalendarSync isDark={isDark} onClose={() => setShowGoogleSync(false)} />
+      )}
+
+      {/* Day Events Modal */}
+      {showDayEventsModal && dayEventsModalDate && (
+        <DayEventsModal
+          date={dayEventsModalDate}
+          events={getEventsForDay(dayEventsModalDate)}
+          isDark={isDark}
+          onClose={() => {
+            setShowDayEventsModal(false);
+            setDayEventsModalDate(null);
+          }}
+          onEventClick={(event, e) => {
+            setShowDayEventsModal(false);
+            handleEventClick(event, e);
+          }}
+        />
       )}
       
       <ChatSidebar isDark={isDark} />

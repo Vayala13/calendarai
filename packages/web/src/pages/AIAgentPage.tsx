@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import styled, { keyframes } from 'styled-components';
+import styled, { keyframes, css } from 'styled-components';
 import { useTheme } from '../context/ThemeContext';
 import ChatSidebar from '../components/ChatSidebar';
 // Using emoji instead of react-icons for React 18 compatibility
@@ -298,18 +298,18 @@ const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' | 'succes
   ${props => {
     switch (props.variant) {
       case 'success':
-        return `
+        return css`
           background: linear-gradient(135deg, #22c55e, #16a34a);
           color: white;
           animation: ${glow} 2s ease-in-out infinite;
         `;
       case 'secondary':
-        return `
+        return css`
           background: ${props.isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb'};
           color: ${props.isDark ? '#e5e7eb' : '#374151'};
         `;
       default:
-        return `
+        return css`
           background: linear-gradient(135deg, #8b5cf6, #7c3aed);
           color: white;
         `;

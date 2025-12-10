@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import styled from 'styled-components';
-import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, addMonths, subMonths, parseISO } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, addMonths, subMonths, addWeeks, subWeeks, parseISO } from 'date-fns';
 import { createEvents } from 'ics';
 import { useTheme, themes } from '../context/ThemeContext';
+import DayEventsModal from '../components/DayEventsModal';
 
 // ============ STYLED COMPONENTS ============
 
@@ -15,8 +16,10 @@ const PageContainer = styled.div<{ isDark: boolean }>`
 `;
 
 const ContentContainer = styled.div`
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
+  width: 100%;
+  padding: 0 10px;
 `;
 
 const Header = styled.div<{ isDark: boolean }>`
@@ -149,6 +152,7 @@ const CalendarNav = styled.div<{ isDark: boolean }>`
 const NavButtons = styled.div`
   display: flex;
   gap: 10px;
+  align-items: center;
 `;
 
 const NavButton = styled.button<{ isDark: boolean }>`
@@ -164,6 +168,30 @@ const NavButton = styled.button<{ isDark: boolean }>`
   &:hover {
     background: ${props => props.isDark ? '#0891b2' : '#e0e0e0'};
     color: ${props => props.isDark ? 'white' : '#333'};
+  }
+`;
+
+const ViewToggle = styled.div<{ isDark: boolean }>`
+  display: flex;
+  background: ${props => props.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'};
+  border-radius: 8px;
+  padding: 4px;
+  margin-left: 15px;
+`;
+
+const ViewButton = styled.button<{ active: boolean; isDark: boolean }>`
+  background: ${props => props.active ? (props.isDark ? '#0891b2' : '#0891b2') : 'transparent'};
+  border: none;
+  color: ${props => props.active ? 'white' : (props.isDark ? themes.dark.textPrimary : '#333')};
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: ${props => props.active ? '600' : '400'};
+  transition: all 0.2s;
+  
+  &:hover {
+    background: ${props => props.active ? (props.isDark ? '#0369a1' : '#0369a1') : (props.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)')};
   }
 `;
 
@@ -220,6 +248,7 @@ const DaysGrid = styled.div`
 
 const DayCell = styled.div<{ isCurrentMonth: boolean; isToday: boolean; isDark: boolean }>`
   min-height: 100px;
+  min-width: 140px;
   padding: 6px;
   border: 1px solid ${props => props.isDark ? themes.dark.borderColor : '#e0e0e0'};
   background: ${props => {
@@ -265,14 +294,13 @@ const EventsContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 2px;
-  max-height: 70px;
-  overflow-y: auto;
+  overflow: hidden;
 `;
 
 const EventChip = styled.div<{ color: string; isModified?: boolean; isDeleted?: boolean }>`
   background: ${props => props.isDeleted ? '#9ca3af' : props.color || '#667eea'};
   color: white;
-  padding: 2px 5px;
+  padding: 3px 6px;
   border-radius: 3px;
   font-size: 0.7rem;
   white-space: nowrap;
@@ -287,6 +315,285 @@ const EventChip = styled.div<{ color: string; isModified?: boolean; isDeleted?: 
   &:hover {
     transform: scale(1.02);
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+`;
+
+const MoreEventsChip = styled.div<{ isDark: boolean }>`
+  color: ${props => props.isDark ? themes.dark.textPrimary : themes.light.textPrimary};
+  padding: 3px 6px;
+  border-radius: 3px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+  background: ${props => props.isDark ? 'rgba(6, 182, 212, 0.2)' : 'rgba(8, 145, 178, 0.15)'};
+  
+  &:hover {
+    background: ${props => props.isDark ? 'rgba(6, 182, 212, 0.3)' : 'rgba(8, 145, 178, 0.25)'};
+  }
+`;
+
+// ============ WEEK VIEW STYLES ============
+
+const WeekViewContainer = styled.div<{ isDark: boolean }>`
+  background: ${props => props.isDark ? themes.dark.calendarBg : 'white'};
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: ${props => props.isDark ? themes.dark.shadow : '0 4px 20px rgba(0,0,0,0.1)'};
+  border: ${props => props.isDark ? '1px solid ' + themes.dark.borderColor : 'none'};
+  max-height: calc(100vh - 280px);
+  display: flex;
+  flex-direction: column;
+`;
+
+const WeekGrid = styled.div<{ isDark: boolean }>`
+  display: grid;
+  grid-template-columns: 60px repeat(7, 1fr);
+  overflow-y: auto;
+  flex: 1;
+  
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: ${props => props.isDark ? themes.dark.bgSecondary : '#f0f0f0'};
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: ${props => props.isDark ? themes.dark.borderColor : '#ccc'};
+    border-radius: 4px;
+  }
+`;
+
+const TimeColumn = styled.div<{ isDark: boolean }>`
+  border-right: 1px solid ${props => props.isDark ? themes.dark.borderColor : '#e0e0e0'};
+`;
+
+const TimeSlot = styled.div<{ isDark: boolean }>`
+  height: 50px;
+  min-height: 50px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  color: ${props => props.isDark ? themes.dark.textMuted : '#999'};
+  text-align: right;
+  border-bottom: 1px solid ${props => props.isDark ? themes.dark.borderColor : '#f0f0f0'};
+  flex-shrink: 0;
+`;
+
+const WeekDayColumn = styled.div<{ isDark: boolean; isToday: boolean }>`
+  border-right: 1px solid ${props => props.isDark ? themes.dark.borderColor : '#e0e0e0'};
+  position: relative;
+  
+  &:last-child {
+    border-right: none;
+  }
+  
+  ${props => props.isToday && `
+    background: ${props.isDark ? 'rgba(8, 145, 178, 0.1)' : 'rgba(8, 145, 178, 0.05)'};
+  `}
+`;
+
+const WeekDayHeader = styled.div<{ isDark: boolean; isToday: boolean }>`
+  padding: 12px 8px;
+  text-align: center;
+  border-bottom: 1px solid ${props => props.isDark ? themes.dark.borderColor : '#e0e0e0'};
+  background: ${props => props.isDark 
+    ? 'linear-gradient(135deg, #0369a1 0%, #0891b2 100%)' 
+    : 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'};
+  color: white;
+  
+  .day-name {
+    font-size: 0.75rem;
+    opacity: 0.9;
+  }
+  
+  .day-number {
+    font-size: 1.2rem;
+    font-weight: 700;
+    ${props => props.isToday && `
+      background: white;
+      color: #0891b2;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 4px;
+    `}
+  }
+`;
+
+const WeekHourRow = styled.div<{ isDark: boolean }>`
+  height: 50px;
+  min-height: 50px;
+  border-bottom: 1px solid ${props => props.isDark ? themes.dark.borderColor : '#f0f0f0'};
+  position: relative;
+  flex-shrink: 0;
+`;
+
+const WeekEventBlock = styled.div<{ color: string; top: number; height: number; isDark: boolean; isModified?: boolean; isDeleted?: boolean }>`
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  top: ${props => props.top}px;
+  height: ${props => Math.max(props.height, 20)}px;
+  background: ${props => props.isDeleted ? '#9ca3af' : props.color || '#667eea'};
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  color: white;
+  overflow: hidden;
+  cursor: pointer;
+  z-index: 1;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  opacity: ${props => props.isDeleted ? 0.5 : 1};
+  text-decoration: ${props => props.isDeleted ? 'line-through' : 'none'};
+  border: ${props => props.isModified ? '2px solid #fbbf24' : 'none'};
+  
+  &:hover {
+    transform: scale(1.02);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    z-index: 2;
+  }
+  
+  .event-time {
+    font-size: 0.65rem;
+    opacity: 0.9;
+  }
+  
+  .event-title {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+`;
+
+// ============ DAY VIEW STYLES ============
+
+const DayViewContainer = styled.div<{ isDark: boolean }>`
+  background: ${props => props.isDark ? themes.dark.calendarBg : 'white'};
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: ${props => props.isDark ? themes.dark.shadow : '0 4px 20px rgba(0,0,0,0.1)'};
+  border: ${props => props.isDark ? '1px solid ' + themes.dark.borderColor : 'none'};
+  max-height: calc(100vh - 280px);
+  display: flex;
+  flex-direction: column;
+`;
+
+const DayHeader = styled.div<{ isDark: boolean }>`
+  padding: 20px;
+  text-align: center;
+  background: ${props => props.isDark 
+    ? 'linear-gradient(135deg, #0369a1 0%, #0891b2 100%)' 
+    : 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'};
+  color: white;
+  
+  .day-name {
+    font-size: 1rem;
+    opacity: 0.9;
+  }
+  
+  .day-date {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-top: 4px;
+  }
+`;
+
+const DayTimeGrid = styled.div<{ isDark: boolean }>`
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  overflow-y: auto;
+  flex: 1;
+  
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: ${props => props.isDark ? themes.dark.bgSecondary : '#f0f0f0'};
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: ${props => props.isDark ? themes.dark.borderColor : '#ccc'};
+    border-radius: 4px;
+  }
+`;
+
+const DayTimeSlot = styled.div<{ isDark: boolean }>`
+  height: 50px;
+  min-height: 50px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  color: ${props => props.isDark ? themes.dark.textMuted : '#666'};
+  text-align: right;
+  border-bottom: 1px solid ${props => props.isDark ? themes.dark.borderColor : '#f0f0f0'};
+  border-right: 1px solid ${props => props.isDark ? themes.dark.borderColor : '#e0e0e0'};
+  flex-shrink: 0;
+`;
+
+const DayEventColumn = styled.div<{ isDark: boolean }>`
+  position: relative;
+`;
+
+const DayHourRow = styled.div<{ isDark: boolean }>`
+  height: 50px;
+  min-height: 50px;
+  border-bottom: 1px solid ${props => props.isDark ? themes.dark.borderColor : '#f0f0f0'};
+  position: relative;
+  flex-shrink: 0;
+  
+  &:hover {
+    background: ${props => props.isDark ? 'rgba(8, 145, 178, 0.05)' : 'rgba(8, 145, 178, 0.02)'};
+  }
+`;
+
+const DayEventBlock = styled.div<{ color: string; top: number; height: number; isDark: boolean; isModified?: boolean; isDeleted?: boolean }>`
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: ${props => props.top}px;
+  height: ${props => Math.max(props.height, 30)}px;
+  min-height: 30px;
+  background: ${props => props.isDeleted ? '#9ca3af' : props.color || '#667eea'};
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: white;
+  cursor: pointer;
+  z-index: 1;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  opacity: ${props => props.isDeleted ? 0.5 : 1};
+  text-decoration: ${props => props.isDeleted ? 'line-through' : 'none'};
+  border: ${props => props.isModified ? '2px solid #fbbf24' : 'none'};
+  
+  &:hover {
+    transform: scale(1.01);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    z-index: 2;
+  }
+  
+  .event-time {
+    font-size: 0.8rem;
+    opacity: 0.9;
+    margin-bottom: 4px;
+  }
+  
+  .event-title {
+    font-weight: 600;
+    font-size: 1rem;
+  }
+  
+  .event-desc {
+    font-size: 0.85rem;
+    opacity: 0.9;
+    margin-top: 4px;
   }
 `;
 
@@ -468,6 +775,8 @@ interface EventModification {
 
 // ============ COMPONENT ============
 
+type ViewType = 'month' | 'week' | 'day';
+
 const ScenarioEditorPage: React.FC = () => {
   const { isDark } = useTheme();
   const { id: scenarioId } = useParams<{ id: string }>();
@@ -478,12 +787,15 @@ const ScenarioEditorPage: React.FC = () => {
   const [priorities, setPriorities] = useState<Priority[]>([]);
   const [modifications, setModifications] = useState<Map<number, EventModification>>(new Map());
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [viewType, setViewType] = useState<ViewType>('month');
   const [loading, setLoading] = useState(true);
   
   const [showEventModal, setShowEventModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showDayEventsModal, setShowDayEventsModal] = useState(false);
   const [googleConnected, setGoogleConnected] = useState(false);
   const [syncingToGoogle, setSyncingToGoogle] = useState(false);
+  const [dayEventsModalDate, setDayEventsModalDate] = useState<Date | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [eventForm, setEventForm] = useState({
@@ -571,9 +883,30 @@ const ScenarioEditorPage: React.FC = () => {
   };
 
   // Calendar navigation
-  const prevMonth = () => setCurrentDate(subMonths(currentDate, 1));
-  const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
+  const goBack = () => {
+    if (viewType === 'month') setCurrentDate(subMonths(currentDate, 1));
+    else if (viewType === 'week') setCurrentDate(subWeeks(currentDate, 1));
+    else setCurrentDate(addDays(currentDate, -1));
+  };
+  
+  const goForward = () => {
+    if (viewType === 'month') setCurrentDate(addMonths(currentDate, 1));
+    else if (viewType === 'week') setCurrentDate(addWeeks(currentDate, 1));
+    else setCurrentDate(addDays(currentDate, 1));
+  };
+  
   const goToToday = () => setCurrentDate(new Date());
+  
+  // Get display title based on view
+  const getDisplayTitle = () => {
+    if (viewType === 'month') return format(currentDate, 'MMMM yyyy');
+    if (viewType === 'week') {
+      const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 }); // Monday = 1
+      const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
+      return `${format(weekStart, 'MMM d')} - ${format(weekEnd, 'MMM d, yyyy')}`;
+    }
+    return format(currentDate, 'EEEE, MMMM d, yyyy');
+  };
 
   // Generate calendar days
   const generateCalendarDays = () => {
@@ -871,16 +1204,23 @@ const ScenarioEditorPage: React.FC = () => {
 
         <CalendarNav isDark={isDark}>
           <NavButtons>
-            <NavButton isDark={isDark} onClick={prevMonth}>◀ Prev</NavButton>
+            <NavButton isDark={isDark} onClick={goBack}>◀ Prev</NavButton>
             <NavButton isDark={isDark} onClick={goToToday}>Today</NavButton>
-            <NavButton isDark={isDark} onClick={nextMonth}>Next ▶</NavButton>
+            <NavButton isDark={isDark} onClick={goForward}>Next ▶</NavButton>
+            <ViewToggle isDark={isDark}>
+              <ViewButton active={viewType === 'month'} isDark={isDark} onClick={() => setViewType('month')}>Month</ViewButton>
+              <ViewButton active={viewType === 'week'} isDark={isDark} onClick={() => setViewType('week')}>Week</ViewButton>
+              <ViewButton active={viewType === 'day'} isDark={isDark} onClick={() => setViewType('day')}>Day</ViewButton>
+            </ViewToggle>
           </NavButtons>
-          <CurrentMonth isDark={isDark}>{format(currentDate, 'MMMM yyyy')}</CurrentMonth>
+          <CurrentMonth isDark={isDark}>{getDisplayTitle()}</CurrentMonth>
           <ChangesIndicator isDark={isDark} hasChanges={modifications.size > 0}>
             {modifications.size > 0 ? `⚠️ ${modifications.size} unsaved changes` : '✓ No changes'}
           </ChangesIndicator>
         </CalendarNav>
 
+        {/* MONTH VIEW */}
+        {viewType === 'month' && (
         <CalendarContainer isDark={isDark}>
           <WeekDaysHeader isDark={isDark}>
             {weekDays.map(day => (
@@ -906,7 +1246,7 @@ const ScenarioEditorPage: React.FC = () => {
                     {format(day, 'd')}
                   </DayNumber>
                   <EventsContainer>
-                    {dayEvents.map((event: any) => (
+                      {dayEvents.slice(0, 3).map((event: any) => (
                       <EventChip
                         key={event.event_id}
                         color={event.priority_color || (isDark ? '#818cf8' : '#667eea')}
@@ -918,12 +1258,161 @@ const ScenarioEditorPage: React.FC = () => {
                         {event.title}
                       </EventChip>
                     ))}
+                      {dayEvents.length > 3 && (
+                        <MoreEventsChip 
+                          isDark={isDark}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDayEventsModalDate(day);
+                            setShowDayEventsModal(true);
+                          }}
+                          title="Click to see all events"
+                        >
+                          +{dayEvents.length - 3} more
+                        </MoreEventsChip>
+                      )}
                   </EventsContainer>
                 </DayCell>
               );
             })}
           </DaysGrid>
         </CalendarContainer>
+        )}
+
+        {/* WEEK VIEW */}
+        {viewType === 'week' && (
+          <WeekViewContainer isDark={isDark}>
+            <WeekGrid isDark={isDark}>
+              <TimeColumn isDark={isDark}>
+                <WeekDayHeader isDark={isDark} isToday={false} style={{ height: '64px' }}>
+                  <span style={{ fontSize: '0.8rem' }}>Time</span>
+                </WeekDayHeader>
+                {Array.from({ length: 24 }, (_, i) => (
+                  <TimeSlot key={i} isDark={isDark}>
+                    {i === 0 ? '12 AM' : i < 12 ? `${i} AM` : i === 12 ? '12 PM' : `${i - 12} PM`}
+                  </TimeSlot>
+                ))}
+              </TimeColumn>
+              {Array.from({ length: 7 }, (_, dayIndex) => {
+                const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 }); // Monday = 1
+                const day = addDays(weekStart, dayIndex);
+                const isToday = isSameDay(day, new Date());
+                const dayEvents = getEventsForDay(day);
+
+                return (
+                  <WeekDayColumn key={dayIndex} isDark={isDark} isToday={isToday}>
+                    <WeekDayHeader isDark={isDark} isToday={isToday}>
+                      <div className="day-name">{format(day, 'EEE')}</div>
+                      <div className="day-number">{format(day, 'd')}</div>
+                    </WeekDayHeader>
+                    <div style={{ position: 'relative' }}>
+                      {Array.from({ length: 24 }, (_, hour) => (
+                        <WeekHourRow 
+                          key={hour} 
+                          isDark={isDark}
+                          onClick={() => {
+                            const clickedDate = new Date(day);
+                            clickedDate.setHours(hour, 0, 0, 0);
+                            handleDayClick(clickedDate);
+                          }}
+                        />
+                      ))}
+                      {dayEvents.map((event: any) => {
+                        const startTime = parseISO(event.start_time);
+                        const endTime = parseISO(event.end_time);
+                        const startHour = startTime.getHours() + startTime.getMinutes() / 60;
+                        const endHour = endTime.getHours() + endTime.getMinutes() / 60;
+                        const top = startHour * 50;
+                        const height = (endHour - startHour) * 50;
+
+                        return (
+                          <WeekEventBlock
+                            key={event.event_id}
+                            color={event.priority_color || '#667eea'}
+                            top={top}
+                            height={height}
+                            isDark={isDark}
+                            isModified={event.isModified}
+                            isDeleted={event.isDeleted}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEventClick(event, e);
+                            }}
+                          >
+                            <div className="event-time">{format(startTime, 'h:mm a')}</div>
+                            <div className="event-title">{event.title}</div>
+                          </WeekEventBlock>
+                        );
+                      })}
+                    </div>
+                  </WeekDayColumn>
+                );
+              })}
+            </WeekGrid>
+          </WeekViewContainer>
+        )}
+
+        {/* DAY VIEW */}
+        {viewType === 'day' && (
+          <DayViewContainer isDark={isDark}>
+            <DayHeader isDark={isDark}>
+              <div className="day-name">{format(currentDate, 'EEEE')}</div>
+              <div className="day-date">{format(currentDate, 'MMMM d, yyyy')}</div>
+            </DayHeader>
+            <DayTimeGrid isDark={isDark}>
+              <div>
+                {Array.from({ length: 24 }, (_, i) => (
+                  <DayTimeSlot key={i} isDark={isDark}>
+                    {i === 0 ? '12 AM' : i < 12 ? `${i} AM` : i === 12 ? '12 PM' : `${i - 12} PM`}
+                  </DayTimeSlot>
+                ))}
+              </div>
+              <DayEventColumn isDark={isDark}>
+                {Array.from({ length: 24 }, (_, hour) => (
+                  <DayHourRow 
+                    key={hour} 
+                    isDark={isDark}
+                    onClick={() => {
+                      const clickedDate = new Date(currentDate);
+                      clickedDate.setHours(hour, 0, 0, 0);
+                      handleDayClick(clickedDate);
+                    }}
+                  />
+                ))}
+                {getEventsForDay(currentDate).map((event: any) => {
+                  const startTime = parseISO(event.start_time);
+                  const endTime = parseISO(event.end_time);
+                  const startHour = startTime.getHours() + startTime.getMinutes() / 60;
+                  const endHour = endTime.getHours() + endTime.getMinutes() / 60;
+                  const top = startHour * 50;
+                  const height = (endHour - startHour) * 50;
+
+                  return (
+                    <DayEventBlock
+                      key={event.event_id}
+                      color={event.priority_color || '#667eea'}
+                      top={top}
+                      height={height}
+                      isDark={isDark}
+                      isModified={event.isModified}
+                      isDeleted={event.isDeleted}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEventClick(event, e);
+                      }}
+                    >
+                      <div className="event-time">
+                        {format(startTime, 'h:mm a')} - {format(endTime, 'h:mm a')}
+                      </div>
+                      <div className="event-title">{event.title}</div>
+                      {event.description && <div className="event-desc">{event.description}</div>}
+                    </DayEventBlock>
+                  );
+                })}
+              </DayEventColumn>
+            </DayTimeGrid>
+          </DayViewContainer>
+        )}
       </ContentContainer>
 
       {/* Edit Event Modal */}
@@ -1043,6 +1532,23 @@ const ScenarioEditorPage: React.FC = () => {
             </ButtonRow>
           </ExportModal>
         </ModalOverlay>
+      )}
+
+      {/* Day Events Modal */}
+      {showDayEventsModal && dayEventsModalDate && (
+        <DayEventsModal
+          date={dayEventsModalDate}
+          events={getEventsForDay(dayEventsModalDate)}
+          isDark={isDark}
+          onClose={() => {
+            setShowDayEventsModal(false);
+            setDayEventsModalDate(null);
+          }}
+          onEventClick={(event, e) => {
+            setShowDayEventsModal(false);
+            handleEventClick(event as any, e);
+          }}
+        />
       )}
     </PageContainer>
   );
